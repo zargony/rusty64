@@ -54,29 +54,29 @@ mod tests {
 	#[test]
 	fn test_get () {
 		let data = DummyData;
-		assert_eq!(data.get(123), 123);
-		assert_eq!(data.get(1234), 210);
+		assert_eq!(data.get(0x12), 0x12);
+		assert_eq!(data.get(0x1234), 0x34);
 	}
 
 	#[test]
 	fn test_get_big_endian () {
 		let data = DummyData;
-		assert_eq!(         2u8 , data.get_be(  2u16));
-		assert_eq!(       123u8 , data.get_be(123u16));
-		assert_eq!(       515u16, data.get_be(  2u16));		//   2<<8 |   3
-		assert_eq!(     31612u16, data.get_be(123u16));		// 123<<8 | 124
-		assert_eq!(  33752069u32, data.get_be(  2u16));		//   2<<24 |   3<<16 |   4<<8 |   5
-		assert_eq!(2071756158u32, data.get_be(123u16));		// 123<<24 | 124<<16 | 125<<8 | 126
+		assert_eq!(      0x02_u8 , data.get_be(0x0002_u16));
+		assert_eq!(      0x54_u8 , data.get_be(0x0054_u16));
+		assert_eq!(    0x0203_u16, data.get_be(0x0002_u16));
+		assert_eq!(    0x5455_u16, data.get_be(0x0054_u16));
+		assert_eq!(0x02030405_u32, data.get_be(0x0002_u16));
+		assert_eq!(0x54555657_u32, data.get_be(0x0054_u16));
 	}
 
 	#[test]
 	fn test_get_little_endian () {
 		let data = DummyData;
-		assert_eq!(         2u8 , data.get_le(  2u16));
-		assert_eq!(       123u8 , data.get_le(123u16));
-		assert_eq!(       770u16, data.get_le(  2u16));		//   2 |   3<<8
-		assert_eq!(     31867u16, data.get_le(123u16));		// 123 | 124<<8
-		assert_eq!(  84148994u32, data.get_le(  2u16));		//   2 |   3<<8 |   4<<16 |   5<<24
-		assert_eq!(2122153083u32, data.get_le(123u16));		// 123 | 124<<8 | 125<<16 | 126<<24
+		assert_eq!(      0x02_u8 , data.get_le(0x0002_u16));
+		assert_eq!(      0x54_u8 , data.get_le(0x0054_u16));
+		assert_eq!(    0x0302_u16, data.get_le(0x0002_u16));
+		assert_eq!(    0x5554_u16, data.get_le(0x0054_u16));
+		assert_eq!(0x05040302_u32, data.get_le(0x0002_u16));
+		assert_eq!(0x57565554_u32, data.get_le(0x0054_u16));
 	}
 }
