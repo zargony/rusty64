@@ -6,7 +6,7 @@ pub trait Addressable<ADDR: Int, DATA: Int> {
 }
 
 // FIXME: With default methods, we won't need this anymore
-trait AddressableUtil<ADDR: Int, DATA: Int> {
+pub trait AddressableUtil<ADDR: Int, DATA: Int> {
 	pub fn get_be<T: Int> (&self, addr: ADDR) -> T;
 	pub fn get_le<T: Int> (&self, addr: ADDR) -> T;
 	pub fn set_be<T: Int> (&mut self, addr: ADDR, val: T);
