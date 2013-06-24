@@ -13,7 +13,7 @@ trait AddressableUtil<ADDR: Int, DATA: Int> {
 	pub fn set_le<T: Int> (&mut self, addr: ADDR, val: T);
 }
 
-impl<ADDR: Int+Copy, DATA: Int, A: Addressable<ADDR, DATA>> AddressableUtil<ADDR, DATA> for A {
+impl<ADDR: Int, DATA: Int, A: Addressable<ADDR, DATA>> AddressableUtil<ADDR, DATA> for A {
 	pub fn get_be<T: Int> (&self, addr: ADDR) -> T {
 		assert!(num::Primitive::bits::<T>() % num::Primitive::bits::<DATA>() == 0);
 		let count = num::Primitive::bits::<T>() / num::Primitive::bits::<DATA>();
