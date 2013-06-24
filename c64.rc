@@ -3,3 +3,4 @@
 #[crate_type = "bin"];
 
 pub mod addressable;
+pub mod memory;
