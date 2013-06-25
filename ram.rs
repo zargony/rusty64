@@ -9,13 +9,13 @@ pub struct Ram<ADDR> {
 impl<ADDR: Int> Addressable<ADDR, u8> for Ram<ADDR> {
 	pub fn get (&self, addr: ADDR) -> u8 {
 		let i: uint = num::cast(addr);
-		if i >= self.data.len() { fail!("ram: read beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
+		if i >= self.data.len() { fail!("ram: Read beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
 		self.data[i]
 	}
 
 	pub fn set (&mut self, addr: ADDR, data: u8) {
 		let i: uint = num::cast(addr);
-		if i >= self.data.len() { fail!("ram: write beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
+		if i >= self.data.len() { fail!("ram: Write beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
 		self.data[i] = data;
 	}
 }
