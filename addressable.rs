@@ -7,13 +7,20 @@ pub trait Addressable<ADDR: Int> {
 
 // FIXME: With default methods, we won't need this anymore
 pub trait AddressableUtil<ADDR: Int> {
+	pub fn getx (&self, addr:ADDR, offset: int) -> u8;
 	pub fn get_be<T: Int> (&self, addr: ADDR) -> T;
 	pub fn get_le<T: Int> (&self, addr: ADDR) -> T;
+
+	pub fn setx (&mut self, addr: ADDR, offset: int, data: u8);
 	pub fn set_be<T: Int> (&mut self, addr: ADDR, val: T);
 	pub fn set_le<T: Int> (&mut self, addr: ADDR, val: T);
 }
 
 impl<ADDR: Int, A: Addressable<ADDR>> AddressableUtil<ADDR> for A {
+	pub fn getx (&self, addr:ADDR, offset: int) -> u8 {
+		self.get(addr + num::cast(offset))
+	}
+
 	pub fn get_be<T: Int> (&self, addr: ADDR) -> T {
 		let count = num::Primitive::bytes::<T>();
 		let mut val = num::Zero::zero::<T>();
@@ -38,6 +45,10 @@ impl<ADDR: Int, A: Addressable<ADDR>> AddressableUtil<ADDR> for A {
 			val = val + (d << shift);
 		}
 		val
+	}
+
+	pub fn setx (&mut self, addr: ADDR, offset: int, data: u8) {
+		self.set(addr + num::cast(offset), data);
 	}
 
 	pub fn set_be<T: Int> (&mut self, addr: ADDR, val: T) {
@@ -82,8 +93,15 @@ mod tests {
 	#[test]
 	fn test_get () {
 		let data = DummyData;
-		assert_eq!(data.get(0x12), 0x12);
+		assert_eq!(data.get(0x0012), 0x12);
 		assert_eq!(data.get(0x1234), 0x34);
+	}
+
+	#[test]
+	fn test_getx () {
+		let data = DummyData;
+		assert_eq!(data.getx(0x0012_u16, 5), 0x17);
+		assert_eq!(data.getx(0x1234_u16, 5), 0x39);
 	}
 
 	#[test]
@@ -111,8 +129,15 @@ mod tests {
 	#[test]
 	fn test_set () {
 		let mut data = DummyData;
-		data.set(0x12, 0x12);
+		data.set(0x0012, 0x12);
 		data.set(0x1234, 0x34);
+	}
+
+	#[test]
+	fn test_setx () {
+		let mut data = DummyData;
+		data.setx(0x0012_u16, 5, 0x17);
+		data.setx(0x1234_u16, 5, 0x39);
 	}
 
 	#[test]
