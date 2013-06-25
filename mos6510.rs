@@ -69,7 +69,7 @@ pub struct CPU {
 	mem: ~Ram<u16>,
 }
 
-impl Addressable<u16, u8> for CPU {
+impl Addressable<u16> for CPU {
 	pub fn get (&self, addr: u16) -> u8 {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
 		self.mem.get(addr)

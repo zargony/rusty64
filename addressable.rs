@@ -1,27 +1,26 @@
 use std::num;
 
-pub trait Addressable<ADDR: Int, DATA: Int> {
-	pub fn get (&self, addr: ADDR) -> DATA;
-	pub fn set (&mut self, addr: ADDR, data: DATA);
+pub trait Addressable<ADDR: Int> {
+	pub fn get (&self, addr: ADDR) -> u8;
+	pub fn set (&mut self, addr: ADDR, data: u8);
 }
 
 // FIXME: With default methods, we won't need this anymore
-pub trait AddressableUtil<ADDR: Int, DATA: Int> {
+pub trait AddressableUtil<ADDR: Int> {
 	pub fn get_be<T: Int> (&self, addr: ADDR) -> T;
 	pub fn get_le<T: Int> (&self, addr: ADDR) -> T;
 	pub fn set_be<T: Int> (&mut self, addr: ADDR, val: T);
 	pub fn set_le<T: Int> (&mut self, addr: ADDR, val: T);
 }
 
-impl<ADDR: Int, DATA: Int, A: Addressable<ADDR, DATA>> AddressableUtil<ADDR, DATA> for A {
+impl<ADDR: Int, A: Addressable<ADDR>> AddressableUtil<ADDR> for A {
 	pub fn get_be<T: Int> (&self, addr: ADDR) -> T {
-		assert!(num::Primitive::bits::<T>() % num::Primitive::bits::<DATA>() == 0);
-		let count = num::Primitive::bits::<T>() / num::Primitive::bits::<DATA>();
+		let count = num::Primitive::bytes::<T>();
 		let mut val = num::Zero::zero::<T>();
 		let mut i = count;
 		while i > 0 {
 			i -= 1;
-			let shift: T = num::cast((count-i-1) * num::Primitive::bits::<DATA>());
+			let shift: T = num::cast((count-i-1) * num::Primitive::bits::<u8>());
 			let d: T = num::cast(self.get(addr + num::cast(i)));
 			val = val + (d << shift);
 		}
@@ -29,13 +28,12 @@ impl<ADDR: Int, DATA: Int, A: Addressable<ADDR, DATA>> AddressableUtil<ADDR, DAT
 	}
 
 	pub fn get_le<T: Int> (&self, addr: ADDR) -> T {
-		assert!(num::Primitive::bits::<T>() % num::Primitive::bits::<DATA>() == 0);
-		let count = num::Primitive::bits::<T>() / num::Primitive::bits::<DATA>();
+		let count = num::Primitive::bytes::<T>();
 		let mut val = num::Zero::zero::<T>();
 		let mut i = count;
 		while i > 0 {
 			i -= 1;
-			let shift: T = num::cast(i * num::Primitive::bits::<DATA>());
+			let shift: T = num::cast(i * num::Primitive::bits::<u8>());
 			let d: T = num::cast(self.get(addr + num::cast(i)));
 			val = val + (d << shift);
 		}
@@ -43,27 +41,25 @@ impl<ADDR: Int, DATA: Int, A: Addressable<ADDR, DATA>> AddressableUtil<ADDR, DAT
 	}
 
 	pub fn set_be<T: Int> (&mut self, addr: ADDR, val: T) {
-		assert!(num::Primitive::bits::<T>() % num::Primitive::bits::<DATA>() == 0);
-		let count = num::Primitive::bits::<T>() / num::Primitive::bits::<DATA>();
-		let mask = (1 << num::Primitive::bits::<DATA>()) - 1;
+		let count = num::Primitive::bytes::<T>();
+		let mask = (1 << num::Primitive::bits::<u8>()) - 1;
 		let mut i = count;
 		while i > 0 {
 			i -= 1;
-			let shift: T = num::cast((count-i-1) * num::Primitive::bits::<DATA>());
-			let d: DATA = num::cast((val >> shift) & num::cast(mask));
+			let shift: T = num::cast((count-i-1) * num::Primitive::bits::<u8>());
+			let d: u8 = num::cast((val >> shift) & num::cast(mask));
 			self.set(addr + num::cast(i), d);
 		}
 	}
 
 	pub fn set_le<T: Int> (&mut self, addr: ADDR, val: T) {
-		assert!(num::Primitive::bits::<T>() % num::Primitive::bits::<DATA>() == 0);
-		let count = num::Primitive::bits::<T>() / num::Primitive::bits::<DATA>();
-		let mask = (1 << num::Primitive::bits::<DATA>()) - 1;
+		let count = num::Primitive::bytes::<T>();
+		let mask = (1 << num::Primitive::bits::<u8>()) - 1;
 		let mut i = count;
 		while i > 0 {
 			i -= 1;
-			let shift: T = num::cast(i * num::Primitive::bits::<DATA>());
-			let d: DATA = num::cast((val >> shift) & num::cast(mask));
+			let shift: T = num::cast(i * num::Primitive::bits::<u8>());
+			let d: u8 = num::cast((val >> shift) & num::cast(mask));
 			self.set(addr + num::cast(i), d);
 		}
 	}
@@ -74,7 +70,7 @@ mod tests {
 	use super::*;
 
 	struct DummyData;
-	impl Addressable<u16, u8> for DummyData {
+	impl Addressable<u16> for DummyData {
 		pub fn get (&self, addr: u16) -> u8 {
 			addr as u8
 		}

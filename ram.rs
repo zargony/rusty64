@@ -6,7 +6,7 @@ pub struct Ram<ADDR> {
 	priv data: ~[u8],
 }
 
-impl<ADDR: Int> Addressable<ADDR, u8> for Ram<ADDR> {
+impl<ADDR: Int> Addressable<ADDR> for Ram<ADDR> {
 	pub fn get (&self, addr: ADDR) -> u8 {
 		let i: uint = num::cast(addr);
 		if i >= self.data.len() { fail!("ram: Read beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
