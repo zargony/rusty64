@@ -3,7 +3,7 @@ use std::vec;
 use addressable::Addressable;
 
 pub struct Ram<ADDR> {
-	data: ~[u8],
+	priv data: ~[u8],
 }
 
 impl<ADDR: Int> Addressable<ADDR, u8> for Ram<ADDR> {
