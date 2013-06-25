@@ -126,6 +126,17 @@ mod tests {
 	}
 
 	#[test]
+	fn test_get_signed_big_endian () {
+		let data = DummyData;
+		assert_eq!(       0x54_i8 , data.get_be(0x0054_u16));
+		assert_eq!(      -0x5b_i8 , data.get_be(0x00a5_u16));
+		assert_eq!(     0x5455_i16, data.get_be(0x0054_u16));
+		assert_eq!(    -0x5a5a_i16, data.get_be(0x00a5_u16));
+		assert_eq!( 0x54555657_i32, data.get_be(0x0054_u16));
+		assert_eq!(-0x5a595858_i32, data.get_be(0x00a5_u16));
+	}
+
+	#[test]
 	fn test_get_little_endian () {
 		let data = DummyData;
 		assert_eq!(      0x02_u8 , data.get_le(0x0002_u16));
@@ -134,6 +145,17 @@ mod tests {
 		assert_eq!(    0x5554_u16, data.get_le(0x0054_u16));
 		assert_eq!(0x05040302_u32, data.get_le(0x0002_u16));
 		assert_eq!(0x57565554_u32, data.get_le(0x0054_u16));
+	}
+
+	#[test]
+	fn test_get_signed_little_endian () {
+		let data = DummyData;
+		assert_eq!(       0x54_i8 , data.get_le(0x0054_u16));
+		assert_eq!(      -0x5b_i8 , data.get_le(0x00a5_u16));
+		assert_eq!(     0x5554_i16, data.get_le(0x0054_u16));
+		assert_eq!(    -0x595b_i16, data.get_le(0x00a5_u16));
+		assert_eq!( 0x57565554_i32, data.get_le(0x0054_u16));
+		assert_eq!(-0x5758595b_i32, data.get_le(0x00a5_u16));
 	}
 
 	#[test]
@@ -153,22 +175,43 @@ mod tests {
 	#[test]
 	fn test_set_big_endian () {
 		let mut data = DummyData;
-		data.set_be(0x0002_u16, 0x02_u8);
-		data.set_be(0x0054_u16, 0x54_u8);
-		data.set_be(0x0002_u16, 0x0203_u16);
-		data.set_be(0x0054_u16, 0x5455_u16);
+		data.set_be(0x0002_u16,       0x02_u8 );
+		data.set_be(0x0054_u16,       0x54_u8 );
+		data.set_be(0x0002_u16,     0x0203_u16);
+		data.set_be(0x0054_u16,     0x5455_u16);
 		data.set_be(0x0002_u16, 0x02030405_u32);
 		data.set_be(0x0054_u16, 0x54555657_u32);
 	}
 
 	#[test]
+	fn test_set_signed_big_endian () {
+		let mut data = DummyData;
+		data.set_be(0x0054_u16,        0x54_i8 );
+		data.set_be(0x00a5_u16,       -0x5b_i8 );
+		data.set_be(0x0054_u16,      0x5455_i16);
+		data.set_be(0x00a5_u16,     -0x5a5a_i16);
+		data.set_be(0x0054_u16,  0x54555657_i32);
+		data.set_be(0x00a5_u16, -0x5a595858_i32);
+	}
+
+	#[test]
 	fn test_set_little_endian () {
 		let mut data = DummyData;
-		data.set_le(0x0002_u16, 0x02_u8);
-		data.set_le(0x0054_u16, 0x54_u8);
-		data.set_le(0x0002_u16, 0x0302_u16);
-		data.set_le(0x0054_u16, 0x5554_u16);
+		data.set_le(0x0002_u16,       0x02_u8 );
+		data.set_le(0x0054_u16,       0x54_u8 );
+		data.set_le(0x0002_u16,     0x0302_u16);
+		data.set_le(0x0054_u16,     0x5554_u16);
 		data.set_le(0x0002_u16, 0x05040302_u32);
 		data.set_le(0x0054_u16, 0x57565554_u32);
+	}
+
+	fn test_set_signed_little_endian () {
+		let mut data = DummyData;
+		data.set_le(0x0054_u16,        0x54_i8 );
+		data.set_le(0x00a5_u16,       -0x5b_i8 );
+		data.set_le(0x0054_u16,      0x5554_i16);
+		data.set_le(0x00a5_u16,     -0x595b_i16);
+		data.set_le(0x0054_u16,  0x57565554_i32);
+		data.set_le(0x00a5_u16, -0x5758595b_i32);
 	}
 }
