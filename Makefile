@@ -7,7 +7,7 @@ run: c64
 	./c64
 
 test: c64_test
-	./c64_test
+	RUST_THREADS=1 RUST_LOG=c64 ./c64_test
 
 clean:
 	rm -rf *.dSYM *~ c64 c64_test
