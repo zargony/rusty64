@@ -5,3 +5,4 @@
 pub mod addressable;
 pub mod mos6510;
 pub mod ram;
+pub mod rom;
