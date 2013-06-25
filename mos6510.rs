@@ -59,6 +59,10 @@ impl Operand {
 }
 
 
+static nmi_vector: u16 = 0xfffa;
+static reset_vector: u16 = 0xfffc;
+static irq_vector: u16 = 0xfffe;
+
 pub struct CPU {
 	pc: u16,				// program counter
 	ac: u8,					// accumulator
