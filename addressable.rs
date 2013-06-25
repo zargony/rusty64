@@ -8,71 +8,81 @@ pub trait Addressable<ADDR: Int> {
 // FIXME: With default methods, we won't need this anymore
 pub trait AddressableUtil<ADDR: Int> {
 	pub fn getx (&self, addr:ADDR, offset: int) -> u8;
+	pub fn get_be_n (&self, addr: ADDR, nbytes: uint) -> u64;
 	pub fn get_be<T: Int> (&self, addr: ADDR) -> T;
+	pub fn get_le_n (&self, addr: ADDR, nbytes: uint) -> u64;
 	pub fn get_le<T: Int> (&self, addr: ADDR) -> T;
 
 	pub fn setx (&mut self, addr: ADDR, offset: int, data: u8);
+	pub fn set_be_n (&mut self, addr: ADDR, nbytes: uint, val: u64);
 	pub fn set_be<T: Int> (&mut self, addr: ADDR, val: T);
+	pub fn set_le_n (&mut self, addr: ADDR, nbytes: uint, val: u64);
 	pub fn set_le<T: Int> (&mut self, addr: ADDR, val: T);
 }
 
-impl<ADDR: Int, A: Addressable<ADDR>> AddressableUtil<ADDR> for A {
+impl<ADDR: Int+Copy, A: Addressable<ADDR>> AddressableUtil<ADDR> for A {
 	pub fn getx (&self, addr:ADDR, offset: int) -> u8 {
 		self.get(addr + num::cast(offset))
 	}
 
-	pub fn get_be<T: Int> (&self, addr: ADDR) -> T {
-		let count = num::Primitive::bytes::<T>();
-		let mut val = num::Zero::zero::<T>();
-		let mut i = count;
+	pub fn get_be_n (&self, addr: ADDR, nbytes: uint) -> u64 {
+		assert!(nbytes > 0 && nbytes < 8);
+		let mut val = 0u64;
+		let mut i = nbytes;
 		while i > 0 {
 			i -= 1;
-			let shift: T = num::cast((count-i-1) * num::Primitive::bits::<u8>());
-			let d: T = num::cast(self.get(addr + num::cast(i)));
-			val = val + (d << shift);
+			val |= self.get(addr + num::cast(i)) as u64 << (nbytes-i-1) * 8;
+		}
+		val
+	}
+
+	pub fn get_be<T: Int> (&self, addr: ADDR) -> T {
+		num::cast(self.get_be_n(addr, num::Primitive::bytes::<T>()))
+	}
+
+	pub fn get_le_n (&self, addr: ADDR, nbytes: uint) -> u64 {
+		assert!(nbytes > 0 && nbytes < 8);
+		let mut val = 0u64;
+		let mut i = nbytes;
+		while i > 0 {
+			i -= 1;
+			val |= self.get(addr + num::cast(i)) as u64 << i * 8;
 		}
 		val
 	}
 
 	pub fn get_le<T: Int> (&self, addr: ADDR) -> T {
-		let count = num::Primitive::bytes::<T>();
-		let mut val = num::Zero::zero::<T>();
-		let mut i = count;
-		while i > 0 {
-			i -= 1;
-			let shift: T = num::cast(i * num::Primitive::bits::<u8>());
-			let d: T = num::cast(self.get(addr + num::cast(i)));
-			val = val + (d << shift);
-		}
-		val
+		num::cast(self.get_le_n(addr, num::Primitive::bytes::<T>()))
 	}
 
 	pub fn setx (&mut self, addr: ADDR, offset: int, data: u8) {
 		self.set(addr + num::cast(offset), data);
 	}
 
-	pub fn set_be<T: Int> (&mut self, addr: ADDR, val: T) {
-		let count = num::Primitive::bytes::<T>();
-		let mask = (1 << num::Primitive::bits::<u8>()) - 1;
-		let mut i = count;
+	pub fn set_be_n (&mut self, addr: ADDR, nbytes: uint, val: u64) {
+		assert!(nbytes > 0 && nbytes < 8);
+		let mut i = nbytes;
 		while i > 0 {
 			i -= 1;
-			let shift: T = num::cast((count-i-1) * num::Primitive::bits::<u8>());
-			let d: u8 = num::cast((val >> shift) & num::cast(mask));
-			self.set(addr + num::cast(i), d);
+			self.set(addr + num::cast(i), (val >> (nbytes-i-1) * 8) as u8);
+		}
+	}
+
+	pub fn set_be<T: Int> (&mut self, addr: ADDR, val: T) {
+		self.set_be_n(addr, num::Primitive::bytes::<T>(), num::cast(val));
+	}
+
+	pub fn set_le_n (&mut self, addr: ADDR, nbytes: uint, val: u64) {
+		assert!(nbytes > 0 && nbytes < 8);
+		let mut i = nbytes;
+		while i > 0 {
+			i -= 1;
+			self.set(addr + num::cast(i), (val >> i * 8) as u8);
 		}
 	}
 
 	pub fn set_le<T: Int> (&mut self, addr: ADDR, val: T) {
-		let count = num::Primitive::bytes::<T>();
-		let mask = (1 << num::Primitive::bits::<u8>()) - 1;
-		let mut i = count;
-		while i > 0 {
-			i -= 1;
-			let shift: T = num::cast(i * num::Primitive::bits::<u8>());
-			let d: u8 = num::cast((val >> shift) & num::cast(mask));
-			self.set(addr + num::cast(i), d);
-		}
+		self.set_le_n(addr, num::Primitive::bytes::<T>(), num::cast(val));
 	}
 }
 
