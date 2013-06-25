@@ -1,6 +1,6 @@
 use addressable::Addressable;
 use addressable::AddressableUtil;
-use ram::RAM;
+use ram::Ram;
 
 enum Operand {
 	Implied,							// OPC				// operand implied
@@ -66,17 +66,17 @@ pub struct CPU {
 	y: u8,					// y register
 	sr: u8,					// status register (NV-BDIZC: Negative, oVerflow, Break, Decimal, Interrupt, Zero, Carry)
 	sp: u8,					// stack pointer
-	mem: ~RAM,
+	mem: ~Ram<u16>,
 }
 
 impl Addressable<u16, u8> for CPU {
 	pub fn get (&self, addr: u16) -> u8 {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
-		self.mem.get(addr as uint)
+		self.mem.get(addr)
 	}
 
 	pub fn set (&mut self, addr: u16, data: u8) {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
-		self.mem.set(addr as uint, data);
+		self.mem.set(addr, data);
 	}
 }
