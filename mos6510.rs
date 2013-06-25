@@ -29,9 +29,9 @@ impl Operand {
 			AbsoluteIndexedWithY(addr)			=> addr + cpu.y as u16,
 			Indirect(addr)						=> cpu.get_le(addr),
 			ZeroPage(addr)						=> addr as u16,
-			ZeroPageIndexedWithX(addr)			=> (addr + cpu.x) as u16,		// no page transition
-			ZeroPageIndexedWithY(addr)			=> (addr + cpu.y) as u16,		// no page transition
-			ZeroPageIndexedWithXIndirect(addr)	=> cpu.get_le((addr + cpu.x) as u16),
+			ZeroPageIndexedWithX(addr)			=> (addr + cpu.x) as u16,				// no page transition
+			ZeroPageIndexedWithY(addr)			=> (addr + cpu.y) as u16,				// no page transition
+			ZeroPageIndexedWithXIndirect(addr)	=> cpu.get_le((addr + cpu.x) as u16),	// no page transition
 			ZeroPageIndirectIndexedWithY(addr)	=> { let iaddr: u16 = cpu.get_le(addr as u16); iaddr + cpu.y as u16 },
 		}
 	}
