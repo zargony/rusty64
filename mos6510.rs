@@ -1,5 +1,6 @@
-use addressable::*;
-use memory::*;
+use addressable::Addressable;
+use addressable::AddressableUtil;
+use ram::RAM;
 
 enum Operand {
 	Implied,							// OPC				// operand implied
@@ -65,7 +66,7 @@ pub struct CPU {
 	y: u8,					// y register
 	sr: u8,					// status register (NV-BDIZC: Negative, oVerflow, Break, Decimal, Interrupt, Zero, Carry)
 	sp: u8,					// stack pointer
-	mem: ~Memory,
+	mem: ~RAM,
 }
 
 impl Addressable<u16, u8> for CPU {
