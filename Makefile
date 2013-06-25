@@ -1,7 +1,8 @@
 RUSTC ?= rustc
 RUSTFLAGS ?= -O
 
-all: c64
+# FIXME: Nothing to build yet, so we run tests by default for now
+all: test
 
 run: c64
 	./c64
