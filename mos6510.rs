@@ -70,7 +70,7 @@ pub struct CPU {
 	y: u8,					// y register
 	sr: u8,					// status register (NV-BDIZC: Negative, oVerflow, Break, Decimal, Interrupt, Zero, Carry)
 	sp: u8,					// stack pointer
-	mem: ~Ram<u16>,
+	mem: Ram<u16>,
 }
 
 impl Addressable<u16> for CPU {

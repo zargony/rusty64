@@ -20,8 +20,8 @@ impl<ADDR: Int> Addressable<ADDR> for Rom<ADDR> {
 }
 
 impl<ADDR: Int> Rom<ADDR> {
-	pub fn new (size: uint, path: &Path) -> ~Rom<ADDR> {
-		let mut rom = ~Rom { data: ~[] };
+	pub fn new (size: uint, path: &Path) -> Rom<ADDR> {
+		let mut rom = Rom { data: ~[] };
 		match io::read_whole_file(path) {
 			Err(err) => fail!("rom: Error reading ROM file: %?", err),
 			Ok(data) => rom.data = data,
