@@ -84,3 +84,9 @@ impl Addressable<u16> for CPU {
 		self.mem.set(addr, data);
 	}
 }
+
+impl CPU {
+	pub fn new () -> CPU {
+		CPU { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0, mem: Ram::new() }
+	}
+}
