@@ -21,7 +21,12 @@ impl<ADDR: Int> Addressable<ADDR> for Ram<ADDR> {
 }
 
 impl<ADDR: Int> Ram<ADDR> {
-	pub fn new (size: uint) -> Ram<ADDR> {
+	pub fn new () -> Ram<ADDR> {
+		let last_addr: uint = num::cast(num::Bounded::max_value::<ADDR>());
+		Ram::new_sized(last_addr + 1)
+	}
+
+	pub fn new_sized (size: uint) -> Ram<ADDR> {
 		Ram { data: vec::from_elem(size, 0) }
 	}
 
@@ -35,8 +40,20 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn test () {
-		let mut memory = Ram::new(1024);
+	fn test_new () {
+		let memory: Ram<u8> = Ram::new();
+		assert_eq!(memory.size(), 256);
+	}
+
+	#[test]
+	fn test_new_sized () {
+		let memory: Ram<u16> = Ram::new_sized(1024);
+		assert_eq!(memory.size(), 1024);
+	}
+
+	#[test]
+	fn test_read_write () {
+		let mut memory: Ram<u16> = Ram::new_sized(1024);
 		memory.set(0x0123, 0x55);
 		assert_eq!(memory.get(0x0123), 0x55);
 	}

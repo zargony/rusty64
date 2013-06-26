@@ -20,12 +20,17 @@ impl<ADDR: Int> Addressable<ADDR> for Rom<ADDR> {
 }
 
 impl<ADDR: Int> Rom<ADDR> {
-	pub fn new (size: uint, path: &Path) -> Rom<ADDR> {
+	pub fn new (path: &Path) -> Rom<ADDR> {
 		let mut rom = Rom { data: ~[] };
 		match io::read_whole_file(path) {
 			Err(err) => fail!("rom: Error reading ROM file: %?", err),
 			Ok(data) => rom.data = data,
 		}
+		rom
+	}
+
+	pub fn new_sized (size: uint, path: &Path) -> Rom<ADDR> {
+		let rom = Rom::new(path);
 		if rom.data.len() != size { fail!("rom: ROM file size does not match expected size ($%x != $%x)", rom.data.len(), size); }
 		rom
 	}
@@ -40,8 +45,20 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn test () {
-		let memory = Rom::new(8192, &Path("kernal.rom"));
+	fn test_new () {
+		let memory: Rom<u16> = Rom::new(&Path("kernal.rom"));
+		assert_eq!(memory.size(), 8192);
+	}
+
+	#[test]
+	fn test_new_sized () {
+		let memory: Rom<u16> = Rom::new_sized(8192, &Path("kernal.rom"));
+		assert_eq!(memory.size(), 8192);
+	}
+
+	#[test]
+	fn test_read () {
+		let memory: Rom<u16> = Rom::new(&Path("kernal.rom"));
 		assert_eq!(memory.get(0x0123), 0x60);
 	}
 }
