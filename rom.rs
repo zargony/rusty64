@@ -29,6 +29,10 @@ impl<ADDR: Int> Rom<ADDR> {
 		if rom.data.len() != size { fail!("rom: ROM file size does not match expected size ($%x != $%x)", rom.data.len(), size); }
 		rom
 	}
+
+	pub fn size (&self) -> uint {
+		self.data.len()
+	}
 }
 
 #[cfg(test)]

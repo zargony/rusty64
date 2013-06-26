@@ -24,6 +24,10 @@ impl<ADDR: Int> Ram<ADDR> {
 	pub fn new (size: uint) -> Ram<ADDR> {
 		Ram { data: vec::from_elem(size, 0) }
 	}
+
+	pub fn size (&self) -> uint {
+		self.data.len()
+	}
 }
 
 #[cfg(test)]
