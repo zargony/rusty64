@@ -73,6 +73,12 @@ pub struct CPU {
 	mem: Ram<u16>,
 }
 
+impl CPU {
+	pub fn new () -> CPU {
+		CPU { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0, mem: Ram::new() }
+	}
+}
+
 impl Addressable<u16> for CPU {
 	pub fn get (&self, addr: u16) -> u8 {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
@@ -82,11 +88,5 @@ impl Addressable<u16> for CPU {
 	pub fn set (&mut self, addr: u16, data: u8) {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
 		self.mem.set(addr, data);
-	}
-}
-
-impl CPU {
-	pub fn new () -> CPU {
-		CPU { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0, mem: Ram::new() }
 	}
 }

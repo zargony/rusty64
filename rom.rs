@@ -6,19 +6,6 @@ pub struct Rom<ADDR> {
 	priv data: ~[u8],
 }
 
-impl<ADDR: Int> Addressable<ADDR> for Rom<ADDR> {
-	pub fn get (&self, addr: ADDR) -> u8 {
-		let i: uint = num::cast(addr);
-		if i >= self.data.len() { fail!("rom: Read beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
-		self.data[i]
-	}
-
-	pub fn set (&mut self, addr: ADDR, _data: u8) {
-		let i: uint = num::cast(addr);
-		warn!("rom: Ignoring write to read-only memory ($%x)", i);
-	}
-}
-
 impl<ADDR: Int> Rom<ADDR> {
 	pub fn new (path: &Path) -> Rom<ADDR> {
 		let mut rom = Rom { data: ~[] };
@@ -39,6 +26,20 @@ impl<ADDR: Int> Rom<ADDR> {
 		self.data.len()
 	}
 }
+
+impl<ADDR: Int> Addressable<ADDR> for Rom<ADDR> {
+	pub fn get (&self, addr: ADDR) -> u8 {
+		let i: uint = num::cast(addr);
+		if i >= self.data.len() { fail!("rom: Read beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
+		self.data[i]
+	}
+
+	pub fn set (&mut self, addr: ADDR, _data: u8) {
+		let i: uint = num::cast(addr);
+		warn!("rom: Ignoring write to read-only memory ($%x)", i);
+	}
+}
+
 
 #[cfg(test)]
 mod tests {

@@ -6,20 +6,6 @@ pub struct Ram<ADDR> {
 	priv data: ~[u8],
 }
 
-impl<ADDR: Int> Addressable<ADDR> for Ram<ADDR> {
-	pub fn get (&self, addr: ADDR) -> u8 {
-		let i: uint = num::cast(addr);
-		if i >= self.data.len() { fail!("ram: Read beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
-		self.data[i]
-	}
-
-	pub fn set (&mut self, addr: ADDR, data: u8) {
-		let i: uint = num::cast(addr);
-		if i >= self.data.len() { fail!("ram: Write beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
-		self.data[i] = data;
-	}
-}
-
 impl<ADDR: Int> Ram<ADDR> {
 	pub fn new () -> Ram<ADDR> {
 		let last_addr: uint = num::cast(num::Bounded::max_value::<ADDR>());
@@ -34,6 +20,21 @@ impl<ADDR: Int> Ram<ADDR> {
 		self.data.len()
 	}
 }
+
+impl<ADDR: Int> Addressable<ADDR> for Ram<ADDR> {
+	pub fn get (&self, addr: ADDR) -> u8 {
+		let i: uint = num::cast(addr);
+		if i >= self.data.len() { fail!("ram: Read beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
+		self.data[i]
+	}
+
+	pub fn set (&mut self, addr: ADDR, data: u8) {
+		let i: uint = num::cast(addr);
+		if i >= self.data.len() { fail!("ram: Write beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
+		self.data[i] = data;
+	}
+}
+
 
 #[cfg(test)]
 mod tests {
