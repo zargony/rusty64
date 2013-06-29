@@ -16,7 +16,7 @@ impl<ADDR> Memory<ADDR> {
 		Memory { areas: ~[] }
 	}
 
-	pub fn add<T: Owned+Addressable<ADDR>> (&mut self, base: ADDR, last: ADDR, handler: ~T) {
+	pub fn add<T: Send+Addressable<ADDR>> (&mut self, base: ADDR, last: ADDR, handler: ~T) {
 		self.areas.push(Area { base: base, last: last, handler: handler as ~Addressable<ADDR> });
 	}
 }
