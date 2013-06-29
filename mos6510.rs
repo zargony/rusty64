@@ -2,6 +2,19 @@ use addressable::Addressable;
 use addressable::AddressableUtil;
 use ram::Ram;
 
+static NMI_VECTOR: u16 = 0xfffa;
+static RESET_VECTOR: u16 = 0xfffc;
+static IRQ_VECTOR: u16 = 0xfffe;
+
+struct Registers {
+	pc: u16,				// program counter
+	ac: u8,					// accumulator
+	x: u8,					// x register
+	y: u8,					// y register
+	sr: u8,					// status register (NV-BDIZC: Negative, oVerflow, Break, Decimal, Interrupt, Zero, Carry)
+	sp: u8,					// stack pointer
+}
+
 enum Operand {
 	Implied,							// OPC				// operand implied
 	Immediate(u8),						// OPC #$BB			// operand is byte (BB)
@@ -19,67 +32,60 @@ enum Operand {
 }
 
 impl Operand {
-	fn addr (&self, cpu: &CPU) -> u16 {
+	fn addr (&self, cpu: &Cpu) -> u16 {
 		match * self {
 			Implied								=> fail!("mos6510: Implied operand is never targetted to an address"),
 			Immediate(_)						=> fail!("mos6510: Immediade operand is never targetted to an address"),
 			Accumulator							=> fail!("mos6510: Accumulator operand is never targetted to an address"),
-			Relative(offset)					=> cpu.pc + offset as u16,
+			Relative(offset)					=> cpu.reg.pc + offset as u16,
 			Absolute(addr)						=> addr,
-			AbsoluteIndexedWithX(addr)			=> addr + cpu.x as u16,
-			AbsoluteIndexedWithY(addr)			=> addr + cpu.y as u16,
+			AbsoluteIndexedWithX(addr)			=> addr + cpu.reg.x as u16,
+			AbsoluteIndexedWithY(addr)			=> addr + cpu.reg.y as u16,
 			Indirect(addr)						=> cpu.get_le(addr),
 			ZeroPage(addr)						=> addr as u16,
-			ZeroPageIndexedWithX(addr)			=> (addr + cpu.x) as u16,				// no page transition
-			ZeroPageIndexedWithY(addr)			=> (addr + cpu.y) as u16,				// no page transition
-			ZeroPageIndexedWithXIndirect(addr)	=> cpu.get_le((addr + cpu.x) as u16),	// no page transition
-			ZeroPageIndirectIndexedWithY(addr)	=> { let iaddr: u16 = cpu.get_le(addr as u16); iaddr + cpu.y as u16 },
+			ZeroPageIndexedWithX(addr)			=> (addr + cpu.reg.x) as u16,				// no page transition
+			ZeroPageIndexedWithY(addr)			=> (addr + cpu.reg.y) as u16,				// no page transition
+			ZeroPageIndexedWithXIndirect(addr)	=> cpu.get_le((addr + cpu.reg.x) as u16),	// no page transition
+			ZeroPageIndirectIndexedWithY(addr)	=> { let iaddr: u16 = cpu.get_le(addr as u16); iaddr + cpu.reg.y as u16 },
 		}
 	}
 
-	fn get (&self, cpu: &CPU) -> u8 {
+	fn get (&self, cpu: &Cpu) -> u8 {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand never has a value"),
 			Immediate(val)						=> val,
-			Accumulator							=> cpu.ac,
+			Accumulator							=> cpu.reg.ac,
 			Relative(_target)					=> fail!("mos6510: Relative operand never has a value"),
 			op									=> { let addr = op.addr(cpu); cpu.get(addr) },
 		}
 	}
 
-	fn set (&self, val: u8, cpu: &mut CPU) {
+	fn set (&self, cpu: &mut Cpu, val: u8) {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand never sets a value"),
 			Immediate(_)						=> fail!("mos6510: Immediate operand never sets a value"),
-			Accumulator							=> cpu.ac = val,
+			Accumulator							=> cpu.reg.ac = val,
 			Relative(_target)					=> fail!("mos6510: Relative operand never sets a value"),
 			op									=> { let addr = op.addr(cpu); cpu.set(addr, val); },
 		}
 	}
 }
 
-
-static NMI_VECTOR: u16 = 0xfffa;
-static RESET_VECTOR: u16 = 0xfffc;
-static IRQ_VECTOR: u16 = 0xfffe;
-
-pub struct CPU {
-	pc: u16,				// program counter
-	ac: u8,					// accumulator
-	x: u8,					// x register
-	y: u8,					// y register
-	sr: u8,					// status register (NV-BDIZC: Negative, oVerflow, Break, Decimal, Interrupt, Zero, Carry)
-	sp: u8,					// stack pointer
-	mem: Ram<u16>,
+pub struct Cpu {
+	priv reg: Registers,
+	priv mem: Ram<u16>,
 }
 
-impl CPU {
-	pub fn new () -> CPU {
-		CPU { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0, mem: Ram::new() }
+impl Cpu {
+	pub fn new () -> Cpu {
+		Cpu {
+			reg: Registers { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0 },
+			mem: Ram::new()
+		}
 	}
 }
 
-impl Addressable<u16> for CPU {
+impl Addressable<u16> for Cpu {
 	pub fn get (&self, addr: u16) -> u8 {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
 		self.mem.get(addr)
