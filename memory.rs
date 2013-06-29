@@ -1,27 +1,27 @@
 use std::num;
 use addressable::Addressable;
 
-struct Area<ADDR> {
+struct Area<'self, ADDR> {
 	base: ADDR,
 	last: ADDR,
-	handler: ~Addressable<ADDR>,
+	handler: &'self mut Addressable<ADDR>,
 }
 
-pub struct Memory<ADDR> {
-	priv areas: ~[Area<ADDR>],
+pub struct Memory<'self, ADDR> {
+	priv areas: ~[Area<'self, ADDR>],
 }
 
-impl<ADDR> Memory<ADDR> {
+impl<'self, ADDR> Memory<'self, ADDR> {
 	pub fn new () -> Memory<ADDR> {
 		Memory { areas: ~[] }
 	}
 
-	pub fn add<T: Send+Addressable<ADDR>> (&mut self, base: ADDR, last: ADDR, handler: ~T) {
-		self.areas.push(Area { base: base, last: last, handler: handler as ~Addressable<ADDR> });
+	pub fn add<T: Send+Addressable<ADDR>> (&mut self, base: ADDR, last: ADDR, handler: &'self mut T) {
+		self.areas.push(Area { base: base, last: last, handler: handler as &'self mut Addressable<ADDR> });
 	}
 }
 
-impl<ADDR: Int> Addressable<ADDR> for Memory<ADDR> {
+impl<'self, ADDR: Int> Addressable<ADDR> for Memory<'self, ADDR> {
 	pub fn get (&self, addr: ADDR) -> u8 {
 		for self.areas.rev_iter().advance() |area| {
 			if addr >= area.base && addr <= area.last {
@@ -52,10 +52,10 @@ mod tests {
 	#[test]
 	fn test_read_write () {
 		let mut m: Memory<u16> = Memory::new();
-		let ram1: Ram<u16> = Ram::new_sized(0x0400);
-		let ram2: Ram<u16> = Ram::new_sized(0x0400);
-		m.add(0x0000, 0x0400, ~ram1);
-		m.add(0x0200, 0x0600, ~ram2);
+		let mut ram1: Ram<u16> = Ram::new_sized(0x0400);
+		let mut ram2: Ram<u16> = Ram::new_sized(0x0400);
+		m.add(0x0000, 0x0400, &mut ram1);
+		m.add(0x0200, 0x0600, &mut ram2);
 		m.set(0x0300, 123);
 		assert_eq!(m.get(0x0300), 123);
 	}
