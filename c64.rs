@@ -2,8 +2,8 @@
 #[author = "Andreas Neuhaus <zargony@zargony.com>"];
 #[crate_type = "bin"];
 
-pub mod addressable;
-pub mod memory;
-pub mod mos6510;
-pub mod ram;
-pub mod rom;
+mod addressable;
+mod memory;
+mod mos6510;
+mod ram;
+mod rom;
