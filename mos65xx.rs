@@ -97,3 +97,15 @@ impl Addressable<u16> for Mos6502 {
 		self.mem.set(addr, data);
 	}
 }
+
+pub struct Mos6510 {
+	priv cpu: Mos6502,			// Core CPU
+	priv port_ddr: u8,			// CPU port data direction register
+	priv port_dat: u8,			// CPU port data register
+}
+
+impl Mos6510 {
+	pub fn new () -> Mos6510 {
+		Mos6510 { cpu: Mos6502::new(), port_ddr: 0, port_dat: 0 }
+	}
+}
