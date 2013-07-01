@@ -32,7 +32,7 @@ enum Operand {
 }
 
 impl Operand {
-	fn addr (&self, cpu: &Cpu) -> u16 {
+	fn addr (&self, cpu: &Mos6502) -> u16 {
 		match * self {
 			Implied								=> fail!("mos6510: Implied operand is never targetted to an address"),
 			Immediate(_)						=> fail!("mos6510: Immediade operand is never targetted to an address"),
@@ -50,7 +50,7 @@ impl Operand {
 		}
 	}
 
-	fn get (&self, cpu: &Cpu) -> u8 {
+	fn get (&self, cpu: &Mos6502) -> u8 {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand never has a value"),
 			Immediate(val)						=> val,
@@ -60,7 +60,7 @@ impl Operand {
 		}
 	}
 
-	fn set (&self, cpu: &mut Cpu, val: u8) {
+	fn set (&self, cpu: &mut Mos6502, val: u8) {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand never sets a value"),
 			Immediate(_)						=> fail!("mos6510: Immediate operand never sets a value"),
@@ -71,21 +71,22 @@ impl Operand {
 	}
 }
 
-pub struct Cpu {
-	priv reg: Registers,
-	priv mem: Ram<u16>,
+
+pub struct Mos6502 {
+	priv reg: Registers,		// internal CPU registers
+	priv mem: Ram<u16>,			// memory as accessible to the CPU
 }
 
-impl Cpu {
-	pub fn new () -> Cpu {
-		Cpu {
+impl Mos6502 {
+	pub fn new () -> Mos6502 {
+		Mos6502 {
 			reg: Registers { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0 },
 			mem: Ram::new()
 		}
 	}
 }
 
-impl Addressable<u16> for Cpu {
+impl Addressable<u16> for Mos6502 {
 	pub fn get (&self, addr: u16) -> u8 {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
 		self.mem.get(addr)

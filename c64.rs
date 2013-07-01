@@ -4,6 +4,6 @@
 
 mod addressable;
 mod memory;
-mod mos6510;
+mod mos65xx;
 mod ram;
 mod rom;
