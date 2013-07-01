@@ -20,7 +20,7 @@ pub trait AddressableUtil<ADDR: Int> {
 	pub fn set_le<T: Int> (&mut self, addr: ADDR, val: T);
 }
 
-impl<ADDR: Int+Copy, A: Addressable<ADDR>> AddressableUtil<ADDR> for A {
+impl<ADDR: Int, A: Addressable<ADDR>> AddressableUtil<ADDR> for A {
 	pub fn getx (&self, addr:ADDR, offset: int) -> u8 {
 		self.get(addr + num::cast(offset))
 	}
