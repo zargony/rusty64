@@ -1,6 +1,6 @@
 use addressable::Addressable;
 use addressable::AddressableUtil;
-use ram::Ram;
+use memory::Memory;
 
 static NMI_VECTOR: u16 = 0xfffa;
 static RESET_VECTOR: u16 = 0xfffc;
@@ -73,15 +73,15 @@ impl Operand {
 
 
 pub struct Mos6502<'self> {
-	priv reg: Registers,		// internal CPU registers
-	priv mem: Ram<u16>,			// memory as accessible to the CPU
+	priv reg: Registers,					// internal CPU registers
+	priv mem: &'self Memory<'self, u16>,	// memory as accessible to the CPU
 }
 
 impl<'self> Mos6502<'self> {
-	pub fn new () -> Mos6502 {
+	pub fn new (mem: &'self Memory<u16>) -> Mos6502<'self> {
 		Mos6502 {
 			reg: Registers { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0 },
-			mem: Ram::new()
+			mem: mem,
 		}
 	}
 }
@@ -100,13 +100,13 @@ impl<'self> Addressable<u16> for Mos6502<'self> {
 
 
 pub struct Mos6510<'self> {
-	priv cpu: Mos6502<'self>,	// Core CPU
-	priv port_ddr: u8,			// CPU port data direction register
-	priv port_dat: u8,			// CPU port data register
+	priv cpu: Mos6502<'self>,				// Core CPU
+	priv port_ddr: u8,						// CPU port data direction register
+	priv port_dat: u8,						// CPU port data register
 }
 
 impl<'self> Mos6510<'self> {
-	pub fn new () -> Mos6510 {
-		Mos6510 { cpu: Mos6502::new(), port_ddr: 0, port_dat: 0 }
+	pub fn new (mem: &'self Memory<u16>) -> Mos6510<'self> {
+		Mos6510 { cpu: Mos6502::new(mem), port_ddr: 0, port_dat: 0 }
 	}
 }
