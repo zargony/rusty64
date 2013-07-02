@@ -94,14 +94,14 @@ impl<M: Addressable<u16>> Mos6502<M> {
 }
 
 
-pub struct Mos6510<'self> {
-	priv cpu: Mos6502<'self>,				// Core CPU
+pub struct Mos6510<M> {
+	priv cpu: Mos6502<M>,					// Core CPU
 	priv port_ddr: u8,						// CPU port data direction register
 	priv port_dat: u8,						// CPU port data register
 }
 
-impl<'self> Mos6510<'self> {
-	pub fn new (mem: &'self Memory<u16>) -> Mos6510<'self> {
+impl<M: Addressable<u16>> Mos6510<M> {
+	pub fn new (mem: M) -> Mos6510<M> {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
 		Mos6510 { cpu: Mos6502::new(mem), port_ddr: 0, port_dat: 0 }
 	}
