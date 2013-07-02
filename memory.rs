@@ -6,7 +6,7 @@ struct Memory<'self, ADDR> {
 }
 
 impl<'self, ADDR> Memory<'self, ADDR> {
-	pub fn new (getfn: &'self fn(ADDR) -> u8, setfn: &'self fn(ADDR, u8)) -> Memory<'self, ADDR> {
+	pub fn new<'r> (getfn: &'r fn(ADDR) -> u8, setfn: &'r fn(ADDR, u8)) -> Memory<'r, ADDR> {
 		Memory { getfn: getfn, setfn: setfn }
 	}
 }
