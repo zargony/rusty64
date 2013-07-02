@@ -39,12 +39,12 @@ impl Operand {
 			Absolute(addr)						=> addr,
 			AbsoluteIndexedWithX(addr)			=> addr + cpu.reg.x as u16,
 			AbsoluteIndexedWithY(addr)			=> addr + cpu.reg.y as u16,
-			Indirect(addr)						=> cpu.get_le(addr),
+			Indirect(addr)						=> cpu.mem.get_le(addr),
 			ZeroPage(addr)						=> addr as u16,
-			ZeroPageIndexedWithX(addr)			=> (addr + cpu.reg.x) as u16,				// no page transition
-			ZeroPageIndexedWithY(addr)			=> (addr + cpu.reg.y) as u16,				// no page transition
-			ZeroPageIndexedWithXIndirect(addr)	=> cpu.get_le((addr + cpu.reg.x) as u16),	// no page transition
-			ZeroPageIndirectIndexedWithY(addr)	=> { let iaddr: u16 = cpu.get_le(addr as u16); iaddr + cpu.reg.y as u16 },
+			ZeroPageIndexedWithX(addr)			=> (addr + cpu.reg.x) as u16,					// no page transition
+			ZeroPageIndexedWithY(addr)			=> (addr + cpu.reg.y) as u16,					// no page transition
+			ZeroPageIndexedWithXIndirect(addr)	=> cpu.mem.get_le((addr + cpu.reg.x) as u16),	// no page transition
+			ZeroPageIndirectIndexedWithY(addr)	=> { let iaddr: u16 = cpu.mem.get_le(addr as u16); iaddr + cpu.reg.y as u16 },
 		}
 	}
 
@@ -54,7 +54,7 @@ impl Operand {
 			Immediate(val)						=> val,
 			Accumulator							=> cpu.reg.ac,
 			Relative(_target)					=> fail!("mos6510: Relative operand never has a value"),
-			op									=> { let addr = op.addr(cpu); cpu.get(addr) },
+			op									=> { let addr = op.addr(cpu); cpu.mem.get(addr) },
 		}
 	}
 
@@ -64,7 +64,7 @@ impl Operand {
 			Immediate(_)						=> fail!("mos6510: Immediate operand never sets a value"),
 			Accumulator							=> cpu.reg.ac = val,
 			Relative(_target)					=> fail!("mos6510: Relative operand never sets a value"),
-			op									=> { let addr = op.addr(cpu); cpu.set(addr, val); },
+			op									=> { let addr = op.addr(cpu); cpu.mem.set(addr, val); },
 		}
 	}
 }
