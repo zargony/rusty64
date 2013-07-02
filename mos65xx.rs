@@ -91,6 +91,11 @@ impl<M: Addressable<u16>> Mos6502<M> {
 	fn get_argument<T: Int> (&self) -> T {
 		self.mem.get_le(self.reg.pc + 1)
 	}
+
+	pub fn step (&mut self) -> uint {
+		// TODO
+		0
+	}
 }
 
 
@@ -104,5 +109,9 @@ impl<M: Addressable<u16>> Mos6510<M> {
 	pub fn new (mem: M) -> Mos6510<M> {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
 		Mos6510 { cpu: Mos6502::new(mem), port_ddr: 0, port_dat: 0 }
+	}
+
+	pub fn step (&mut self) -> uint {
+		self.cpu.step()
 	}
 }
