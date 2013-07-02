@@ -1,4 +1,5 @@
-use memory::Memory;
+use addressable::Addressable;
+use addressable::AddressableUtil;
 
 static NMI_VECTOR: u16 = 0xfffa;
 static RESET_VECTOR: u16 = 0xfffc;
@@ -30,8 +31,8 @@ enum Operand {
 }
 
 impl Operand {
-	fn addr (&self, cpu: &Mos6502) -> u16 {
-		match * self {
+	fn addr<M: Addressable<u16>> (&self, cpu: &Mos6502<M>) -> u16 {
+		match *self {
 			Implied								=> fail!("mos6510: Implied operand is never targetted to an address"),
 			Immediate(_)						=> fail!("mos6510: Immediade operand is never targetted to an address"),
 			Accumulator							=> fail!("mos6510: Accumulator operand is never targetted to an address"),
@@ -48,7 +49,7 @@ impl Operand {
 		}
 	}
 
-	fn get (&self, cpu: &Mos6502) -> u8 {
+	fn get<M: Addressable<u16>> (&self, cpu: &Mos6502<M>) -> u8 {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand never has a value"),
 			Immediate(val)						=> val,
@@ -58,7 +59,7 @@ impl Operand {
 		}
 	}
 
-	fn set (&self, cpu: &mut Mos6502, val: u8) {
+	fn set<M: Addressable<u16>> (&self, cpu: &mut Mos6502<M>, val: u8) {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand never sets a value"),
 			Immediate(_)						=> fail!("mos6510: Immediate operand never sets a value"),
@@ -70,13 +71,13 @@ impl Operand {
 }
 
 
-pub struct Mos6502<'self> {
+pub struct Mos6502<M> {
 	priv reg: Registers,					// internal CPU registers
-	priv mem: &'self Memory<'self, u16>,	// memory as accessible to the CPU
+	priv mem: M,							// memory as accessible to the CPU
 }
 
-impl<'self> Mos6502<'self> {
-	pub fn new (mem: &'self Memory<u16>) -> Mos6502<'self> {
+impl<M: Addressable<u16>> Mos6502<M> {
+	pub fn new (mem: M) -> Mos6502<M> {
 		Mos6502 {
 			reg: Registers { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0 },
 			mem: mem,
