@@ -83,6 +83,14 @@ impl<M: Addressable<u16>> Mos6502<M> {
 			mem: mem,
 		}
 	}
+
+	fn get_opcode (&self) -> u8 {
+		self.mem.get(self.reg.pc)
+	}
+
+	fn get_argument<T: Int> (&self) -> T {
+		self.mem.get_le(self.reg.pc + 1)
+	}
 }
 
 
