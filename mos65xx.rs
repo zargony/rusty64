@@ -1,6 +1,10 @@
 use addressable::Addressable;
 use addressable::AddressableUtil;
 
+// General information on 65xx: http://en.wikipedia.org/wiki/MOS_Technology_6510
+// Web simulator and much info: http://e-tradition.net/bytes/6502/
+// Good reference and overview: http://www.obelisk.demon.co.uk/index.html
+
 static NMI_VECTOR: u16 = 0xfffa;
 static RESET_VECTOR: u16 = 0xfffc;
 static IRQ_VECTOR: u16 = 0xfffe;
