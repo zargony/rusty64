@@ -72,12 +72,12 @@ impl Operand {
 }
 
 
-pub struct Mos6502 {
+pub struct Mos6502<'self> {
 	priv reg: Registers,		// internal CPU registers
 	priv mem: Ram<u16>,			// memory as accessible to the CPU
 }
 
-impl Mos6502 {
+impl<'self> Mos6502<'self> {
 	pub fn new () -> Mos6502 {
 		Mos6502 {
 			reg: Registers { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0 },
@@ -86,7 +86,7 @@ impl Mos6502 {
 	}
 }
 
-impl Addressable<u16> for Mos6502 {
+impl<'self> Addressable<u16> for Mos6502<'self> {
 	pub fn get (&self, addr: u16) -> u8 {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
 		self.mem.get(addr)
@@ -98,13 +98,14 @@ impl Addressable<u16> for Mos6502 {
 	}
 }
 
-pub struct Mos6510 {
-	priv cpu: Mos6502,			// Core CPU
+
+pub struct Mos6510<'self> {
+	priv cpu: Mos6502<'self>,	// Core CPU
 	priv port_ddr: u8,			// CPU port data direction register
 	priv port_dat: u8,			// CPU port data register
 }
 
-impl Mos6510 {
+impl<'self> Mos6510<'self> {
 	pub fn new () -> Mos6510 {
 		Mos6510 { cpu: Mos6502::new(), port_ddr: 0, port_dat: 0 }
 	}
