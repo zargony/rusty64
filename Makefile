@@ -15,8 +15,8 @@ clean:
 
 .PHONY: all run test clean
 
-%: %.rs *.rs
+c64: main.rs *.rs
 	$(RUSTC) $(RUSTFLAGS) --bin -o $@ $<
 
-%_test: %.rs *.rs
+c64_test: main.rs *.rs
 	$(RUSTC) $(RUSTFLAGS) --test -o $@ $<

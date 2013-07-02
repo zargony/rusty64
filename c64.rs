@@ -1,9 +1,11 @@
-#[desc = "C64 emulator"];
-#[author = "Andreas Neuhaus <zargony@zargony.com>"];
-#[crate_type = "bin"];
+pub struct C64;
 
-mod addressable;
-mod memory;
-mod mos65xx;
-mod ram;
-mod rom;
+impl C64 {
+	pub fn new () -> C64 {
+		C64
+	}
+
+	pub fn run (&self) {
+		// TODO
+	}
+}
