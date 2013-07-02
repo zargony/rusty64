@@ -1,5 +1,3 @@
-use addressable::Addressable;
-use addressable::AddressableUtil;
 use memory::Memory;
 
 static NMI_VECTOR: u16 = 0xfffa;
@@ -86,18 +84,6 @@ impl<'self> Mos6502<'self> {
 	}
 }
 
-impl<'self> Addressable<u16> for Mos6502<'self> {
-	pub fn get (&self, addr: u16) -> u8 {
-		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
-		self.mem.get(addr)
-	}
-
-	pub fn set (&mut self, addr: u16, data: u8) {
-		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
-		self.mem.set(addr, data);
-	}
-}
-
 
 pub struct Mos6510<'self> {
 	priv cpu: Mos6502<'self>,				// Core CPU
@@ -107,6 +93,7 @@ pub struct Mos6510<'self> {
 
 impl<'self> Mos6510<'self> {
 	pub fn new (mem: &'self Memory<u16>) -> Mos6510<'self> {
+		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
 		Mos6510 { cpu: Mos6502::new(mem), port_ddr: 0, port_dat: 0 }
 	}
 }
