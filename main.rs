@@ -4,7 +4,6 @@
 
 mod addressable;
 mod c64;
-mod memory;
 mod mos65xx;
 mod ram;
 mod rom;
