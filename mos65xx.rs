@@ -26,7 +26,7 @@ enum Operand {
 }
 
 impl Operand {
-	fn addr<M: Addressable<u16>> (&self, cpu: &Mos6502<M>) -> u16 {
+	fn addr<M: Addressable<u16>> (&self, cpu: &Mos6502, mem: &M) -> u16 {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand is never targetted to an address"),
 			Immediate(_)						=> fail!("mos6510: Immediade operand is never targetted to an address"),
@@ -35,32 +35,32 @@ impl Operand {
 			Absolute(addr)						=> addr,
 			AbsoluteIndexedWithX(addr)			=> addr + cpu.x as u16,
 			AbsoluteIndexedWithY(addr)			=> addr + cpu.y as u16,
-			Indirect(addr)						=> cpu.mem.get_le(addr),
+			Indirect(addr)						=> mem.get_le(addr),
 			ZeroPage(addr)						=> addr as u16,
 			ZeroPageIndexedWithX(addr)			=> (addr + cpu.x) as u16,						// no page transition
 			ZeroPageIndexedWithY(addr)			=> (addr + cpu.y) as u16,						// no page transition
-			ZeroPageIndexedWithXIndirect(addr)	=> cpu.mem.get_le((addr + cpu.x) as u16),		// no page transition
-			ZeroPageIndirectIndexedWithY(addr)	=> { let iaddr: u16 = cpu.mem.get_le(addr as u16); iaddr + cpu.y as u16 },
+			ZeroPageIndexedWithXIndirect(addr)	=> mem.get_le((addr + cpu.x) as u16),			// no page transition
+			ZeroPageIndirectIndexedWithY(addr)	=> { let iaddr: u16 = mem.get_le(addr as u16); iaddr + cpu.y as u16 },
 		}
 	}
 
-	fn get<M: Addressable<u16>> (&self, cpu: &Mos6502<M>) -> u8 {
+	fn get<M: Addressable<u16>> (&self, cpu: &Mos6502, mem: &M) -> u8 {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand never has a value"),
 			Immediate(val)						=> val,
 			Accumulator							=> cpu.ac,
 			Relative(_target)					=> fail!("mos6510: Relative operand never has a value"),
-			op									=> { let addr = op.addr(cpu); cpu.mem.get(addr) },
+			op									=> { let addr = op.addr(cpu, mem); mem.get(addr) },
 		}
 	}
 
-	fn set<M: Addressable<u16>> (&self, cpu: &mut Mos6502<M>, val: u8) {
+	fn set<M: Addressable<u16>> (&self, cpu: &mut Mos6502, mem: &mut M, val: u8) {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand never sets a value"),
 			Immediate(_)						=> fail!("mos6510: Immediate operand never sets a value"),
 			Accumulator							=> cpu.ac = val,
 			Relative(_target)					=> fail!("mos6510: Relative operand never sets a value"),
-			op									=> { let addr = op.addr(cpu); cpu.mem.set(addr, val); },
+			op									=> { let addr = op.addr(cpu, mem); mem.set(addr, val); },
 		}
 	}
 }
@@ -75,46 +75,39 @@ pub struct Mos6502 {
 	priv sp: u8,						// stack pointer
 }
 
-impl<M: Addressable<u16>> Mos6502<M> {
-	pub fn new (mem: M) -> Mos6502<M> {
-		Mos6502 {
-			pc: 0,
-			ac: 0,
-			x: 0,
-			y: 0,
-			sr: 0,
-			sp: 0,
-		}
+impl Mos6502 {
+	pub fn new () -> Mos6502 {
+		Mos6502 { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0 }
 	}
 
-	fn get_opcode (&self) -> u8 {
-		self.mem.get(self.reg.pc)
+	fn get_opcode<M: Addressable<u16>> (&self, mem: &M) -> u8 {
+		mem.get(self.pc)
 	}
 
-	fn get_argument<T: Int> (&self) -> T {
-		self.mem.get_le(self.reg.pc + 1)
+	fn get_argument<M: Addressable<u16>, T: Int> (&self, mem: &M) -> T {
+		mem.get_le(self.pc + 1)
 	}
 
-	pub fn step (&mut self) -> uint {
+	pub fn step<M: Addressable<u16>> (&mut self, mem: &mut M) -> uint {
 		// TODO
 		0
 	}
 }
 
 
-pub struct Mos6510<M> {
-	priv cpu: Mos6502<M>,					// Core CPU
+pub struct Mos6510 {
+	priv cpu: Mos6502,						// Core CPU
 	priv port_ddr: u8,						// CPU port data direction register
 	priv port_dat: u8,						// CPU port data register
 }
 
-impl<M: Addressable<u16>> Mos6510<M> {
-	pub fn new (mem: M) -> Mos6510<M> {
+impl Mos6510 {
+	pub fn new () -> Mos6510 {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
-		Mos6510 { cpu: Mos6502::new(mem), port_ddr: 0, port_dat: 0 }
+		Mos6510 { cpu: Mos6502::new(), port_ddr: 0, port_dat: 0 }
 	}
 
-	pub fn step (&mut self) -> uint {
-		self.cpu.step()
+	pub fn step<M: Addressable<u16>> (&mut self, mem: &mut M) -> uint {
+		self.cpu.step(mem)
 	}
 }
