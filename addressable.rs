@@ -5,7 +5,6 @@ pub trait Addressable<ADDR: Int> {
 	pub fn set (&mut self, addr: ADDR, data: u8);
 }
 
-// FIXME: With default methods, we won't need this anymore
 pub trait AddressableUtil<ADDR: Int> {
 	pub fn getx (&self, addr:ADDR, offset: int) -> u8;
 	pub fn get_be_n (&self, addr: ADDR, nbytes: uint) -> u64;
@@ -85,6 +84,7 @@ impl<ADDR: Int, A: Addressable<ADDR>> AddressableUtil<ADDR> for A {
 		self.set_le_n(addr, num::Primitive::bytes::<T>(), num::cast(val));
 	}
 }
+
 
 #[cfg(test)]
 mod tests {
