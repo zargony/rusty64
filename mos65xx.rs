@@ -28,9 +28,9 @@ enum Operand {
 impl Operand {
 	fn addr<M: Addressable<u16>> (&self, cpu: &Mos6502, mem: &M) -> u16 {
 		match *self {
-			Implied								=> fail!("mos6510: Implied operand is never targetted to an address"),
-			Immediate(_)						=> fail!("mos6510: Immediate operand is never targetted to an address"),
-			Accumulator							=> fail!("mos6510: Accumulator operand is never targetted to an address"),
+			Implied								=> fail!("mos65xx: Implied operand is never targetted to an address"),
+			Immediate(_)						=> fail!("mos65xx: Immediate operand is never targetted to an address"),
+			Accumulator							=> fail!("mos65xx: Accumulator operand is never targetted to an address"),
 			Relative(offset)					=> cpu.pc + offset as u16,
 			Absolute(addr)						=> addr,
 			AbsoluteIndexedWithX(addr)			=> addr + cpu.x as u16,
@@ -46,20 +46,20 @@ impl Operand {
 
 	fn get<M: Addressable<u16>> (&self, cpu: &Mos6502, mem: &M) -> u8 {
 		match *self {
-			Implied								=> fail!("mos6510: Implied operand never has a value"),
+			Implied								=> fail!("mos65xx: Implied operand never has a value"),
 			Immediate(val)						=> val,
 			Accumulator							=> cpu.ac,
-			Relative(_target)					=> fail!("mos6510: Relative operand never has a value"),
+			Relative(_target)					=> fail!("mos65xx: Relative operand never has a value"),
 			op									=> { let addr = op.addr(cpu, mem); mem.get(addr) },
 		}
 	}
 
 	fn set<M: Addressable<u16>> (&self, cpu: &mut Mos6502, mem: &mut M, val: u8) {
 		match *self {
-			Implied								=> fail!("mos6510: Implied operand never sets a value"),
-			Immediate(_)						=> fail!("mos6510: Immediate operand never sets a value"),
+			Implied								=> fail!("mos65xx: Implied operand never sets a value"),
+			Immediate(_)						=> fail!("mos65xx: Immediate operand never sets a value"),
 			Accumulator							=> cpu.ac = val,
-			Relative(_target)					=> fail!("mos6510: Relative operand never sets a value"),
+			Relative(_target)					=> fail!("mos65xx: Relative operand never sets a value"),
 			op									=> { let addr = op.addr(cpu, mem); mem.set(addr, val); },
 		}
 	}
