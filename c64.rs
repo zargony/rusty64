@@ -1,7 +1,22 @@
+#[desc = "C64 emulator"];
+#[author = "Andreas Neuhaus <zargony@zargony.com>"];
+#[crate_type = "bin"];
+
 use addressable::Addressable;
 use mos65xx::Mos6510;
 use ram::Ram;
 use rom::Rom;
+
+mod addressable;
+mod mos65xx;
+mod ram;
+mod rom;
+
+fn main () {
+	let mut c64 = C64::new();
+	c64.run();
+}
+
 
 // C64 memory map overview: http://www.c64-wiki.com/index.php/Memory_Map
 // Details about the PLA: http://www.c64-wiki.de/index.php/PLA_(C64-Chip)
