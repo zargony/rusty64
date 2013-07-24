@@ -1,4 +1,5 @@
 use addressable::Addressable;
+use mos65xx::Mos6510;
 use ram::Ram;
 use rom::Rom;
 
@@ -46,11 +47,17 @@ impl Addressable<u16> for C64Memory {
 }
 
 
-pub struct C64;
+pub struct C64 {
+	priv cpu: Mos6510,
+	priv mem: C64Memory,
+}
 
 impl C64 {
 	pub fn new () -> C64 {
-		C64
+		C64 {
+			cpu: Mos6510::new(),
+			mem: C64Memory::new(),
+		}
 	}
 
 	pub fn run (&mut self) {
