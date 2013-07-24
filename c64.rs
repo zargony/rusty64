@@ -12,6 +12,9 @@ mod mos65xx;
 mod ram;
 mod rom;
 
+#[cfg(test)]
+mod testmemory;
+
 fn main () {
 	let mut c64 = C64::new();
 	c64.run();
