@@ -29,7 +29,7 @@ impl Operand {
 	fn addr<M: Addressable<u16>> (&self, cpu: &Mos6502, mem: &M) -> u16 {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand is never targetted to an address"),
-			Immediate(_)						=> fail!("mos6510: Immediade operand is never targetted to an address"),
+			Immediate(_)						=> fail!("mos6510: Immediate operand is never targetted to an address"),
 			Accumulator							=> fail!("mos6510: Accumulator operand is never targetted to an address"),
 			Relative(offset)					=> cpu.pc + offset as u16,
 			Absolute(addr)						=> addr,
