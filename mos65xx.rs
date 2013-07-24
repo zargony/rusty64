@@ -9,15 +9,6 @@ static NMI_VECTOR: u16 = 0xfffa;
 static RESET_VECTOR: u16 = 0xfffc;
 static IRQ_VECTOR: u16 = 0xfffe;
 
-struct Registers {
-	pc: u16,				// program counter
-	ac: u8,					// accumulator
-	x: u8,					// x register
-	y: u8,					// y register
-	sr: u8,					// status register (NV-BDIZC: Negative, oVerflow, Break, Decimal, Interrupt, Zero, Carry)
-	sp: u8,					// stack pointer
-}
-
 enum Operand {
 	Implied,							// OPC				// operand implied
 	Immediate(u8),						// OPC #$BB			// operand is byte (BB)
@@ -40,16 +31,16 @@ impl Operand {
 			Implied								=> fail!("mos6510: Implied operand is never targetted to an address"),
 			Immediate(_)						=> fail!("mos6510: Immediade operand is never targetted to an address"),
 			Accumulator							=> fail!("mos6510: Accumulator operand is never targetted to an address"),
-			Relative(offset)					=> cpu.reg.pc + offset as u16,
+			Relative(offset)					=> cpu.pc + offset as u16,
 			Absolute(addr)						=> addr,
-			AbsoluteIndexedWithX(addr)			=> addr + cpu.reg.x as u16,
-			AbsoluteIndexedWithY(addr)			=> addr + cpu.reg.y as u16,
+			AbsoluteIndexedWithX(addr)			=> addr + cpu.x as u16,
+			AbsoluteIndexedWithY(addr)			=> addr + cpu.y as u16,
 			Indirect(addr)						=> cpu.mem.get_le(addr),
 			ZeroPage(addr)						=> addr as u16,
-			ZeroPageIndexedWithX(addr)			=> (addr + cpu.reg.x) as u16,					// no page transition
-			ZeroPageIndexedWithY(addr)			=> (addr + cpu.reg.y) as u16,					// no page transition
-			ZeroPageIndexedWithXIndirect(addr)	=> cpu.mem.get_le((addr + cpu.reg.x) as u16),	// no page transition
-			ZeroPageIndirectIndexedWithY(addr)	=> { let iaddr: u16 = cpu.mem.get_le(addr as u16); iaddr + cpu.reg.y as u16 },
+			ZeroPageIndexedWithX(addr)			=> (addr + cpu.x) as u16,						// no page transition
+			ZeroPageIndexedWithY(addr)			=> (addr + cpu.y) as u16,						// no page transition
+			ZeroPageIndexedWithXIndirect(addr)	=> cpu.mem.get_le((addr + cpu.x) as u16),		// no page transition
+			ZeroPageIndirectIndexedWithY(addr)	=> { let iaddr: u16 = cpu.mem.get_le(addr as u16); iaddr + cpu.y as u16 },
 		}
 	}
 
@@ -57,7 +48,7 @@ impl Operand {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand never has a value"),
 			Immediate(val)						=> val,
-			Accumulator							=> cpu.reg.ac,
+			Accumulator							=> cpu.ac,
 			Relative(_target)					=> fail!("mos6510: Relative operand never has a value"),
 			op									=> { let addr = op.addr(cpu); cpu.mem.get(addr) },
 		}
@@ -67,7 +58,7 @@ impl Operand {
 		match *self {
 			Implied								=> fail!("mos6510: Implied operand never sets a value"),
 			Immediate(_)						=> fail!("mos6510: Immediate operand never sets a value"),
-			Accumulator							=> cpu.reg.ac = val,
+			Accumulator							=> cpu.ac = val,
 			Relative(_target)					=> fail!("mos6510: Relative operand never sets a value"),
 			op									=> { let addr = op.addr(cpu); cpu.mem.set(addr, val); },
 		}
@@ -75,16 +66,24 @@ impl Operand {
 }
 
 
-pub struct Mos6502<M> {
-	priv reg: Registers,					// internal CPU registers
-	priv mem: M,							// memory as accessible to the CPU
+pub struct Mos6502 {
+	priv pc: u16,						// program counter
+	priv ac: u8,						// accumulator
+	priv x: u8,							// x register
+	priv y: u8,							// y register
+	priv sr: u8,						// status register (NV-BDIZC: Negative, oVerflow, Break, Decimal, Interrupt, Zero, Carry)
+	priv sp: u8,						// stack pointer
 }
 
 impl<M: Addressable<u16>> Mos6502<M> {
 	pub fn new (mem: M) -> Mos6502<M> {
 		Mos6502 {
-			reg: Registers { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0 },
-			mem: mem,
+			pc: 0,
+			ac: 0,
+			x: 0,
+			y: 0,
+			sr: 0,
+			sp: 0,
 		}
 	}
 
