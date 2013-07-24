@@ -10,6 +10,6 @@ mod ram;
 mod rom;
 
 fn main () {
-	let c64 = c64::C64::new();
+	let mut c64 = c64::C64::new();
 	c64.run();
 }

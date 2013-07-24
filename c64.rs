@@ -9,7 +9,7 @@ impl C64 {
 		C64
 	}
 
-	pub fn run (&self) {
+	pub fn run (&mut self) {
 		// TODO
 	}
 }
