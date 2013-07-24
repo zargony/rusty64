@@ -1,6 +1,10 @@
 use addressable::Addressable;
 use addressable::AddressableUtil;
 
+#[cfg(test)]
+use testmemory::TestMemory;
+
+
 // General information on 65xx: http://en.wikipedia.org/wiki/MOS_Technology_6510
 // Web simulator and much info: http://e-tradition.net/bytes/6502/
 // Good reference and overview: http://www.obelisk.demon.co.uk/index.html
@@ -110,4 +114,55 @@ impl Mos6510 {
 	pub fn step<M: Addressable<u16>> (&mut self, mem: &mut M) -> uint {
 		self.cpu.step(mem)
 	}
+}
+
+
+#[test]
+fn test_addressing_modes () {
+	let mut cpu = Mos6502 { pc: 0x1337, ac: 0x88, x: 0x11, y: 0x22, sr: 0, sp: 0 };
+	let mut mem = TestMemory::new::<u16>();
+	// Immediate
+	assert_eq!(Immediate(0x55).get(&cpu, &mem), 0x55);
+	// Accumulator
+	assert_eq!(Accumulator.get(&cpu, &mem), 0x88);
+	Accumulator.set(&mut cpu, &mut mem, 0x99); assert_eq!(cpu.ac, 0x99);
+	// Relative
+	assert_eq!(Relative(0x33).addr(&cpu, &mem), 0x136a);
+	assert_eq!(Relative(0x99).addr(&cpu, &mem), 0x12d0);
+	// Absolute
+	assert_eq!(Absolute(0x0123).addr(&cpu, &mem), 0x0123);
+	assert_eq!(Absolute(0x0123).get(&cpu, &mem), 0x24);
+	Absolute(0x0123).set(&mut cpu, &mut mem, 0x24);
+	// AbsoluteIndexedWithX
+	assert_eq!(AbsoluteIndexedWithX(0x0123).addr(&cpu, &mem), 0x0134);
+	assert_eq!(AbsoluteIndexedWithX(0x0123).get(&cpu, &mem), 0x35);
+	AbsoluteIndexedWithX(0x0123).set(&mut cpu, &mut mem, 0x35);
+	// AbsoluteIndexedWithY
+	assert_eq!(AbsoluteIndexedWithY(0x0123).addr(&cpu, &mem), 0x0145);
+	assert_eq!(AbsoluteIndexedWithY(0x0123).get(&cpu, &mem), 0x46);
+	AbsoluteIndexedWithY(0x0123).set(&mut cpu, &mut mem, 0x46);
+	// Indirect
+	assert_eq!(Indirect(0x0123).addr(&cpu, &mem), 0x2524);
+	assert_eq!(Indirect(0x0123).get(&cpu, &mem), 0x49);
+	Indirect(0x0123).set(&mut cpu, &mut mem, 0x49);
+	// ZeroPage
+	assert_eq!(ZeroPage(0x12).addr(&cpu, &mem), 0x0012);
+	assert_eq!(ZeroPage(0x12).get(&cpu, &mem), 0x12);
+	ZeroPage(0x12).set(&mut cpu, &mut mem, 0x12);
+	// ZeroPageIndexedWithX
+	assert_eq!(ZeroPageIndexedWithX(0x12).addr(&cpu, &mem), 0x0023);
+	assert_eq!(ZeroPageIndexedWithX(0x12).get(&cpu, &mem), 0x23);
+	ZeroPageIndexedWithX(0x12).set(&mut cpu, &mut mem, 0x23);
+	// ZeroPageIndexedWithY
+	assert_eq!(ZeroPageIndexedWithY(0x12).addr(&cpu, &mem), 0x0034);
+	assert_eq!(ZeroPageIndexedWithY(0x12).get(&cpu, &mem), 0x34);
+	ZeroPageIndexedWithY(0x12).set(&mut cpu, &mut mem, 0x34);
+	// ZeroPageIndexedWithXIndirect
+	assert_eq!(ZeroPageIndexedWithXIndirect(0x12).addr(&cpu, &mem), 0x2423);
+	assert_eq!(ZeroPageIndexedWithXIndirect(0x12).get(&cpu, &mem), 0x47);
+	ZeroPageIndexedWithXIndirect(0x12).set(&mut cpu, &mut mem, 0x47);
+	// ZeroPageIndirectIndexedWithY
+	assert_eq!(ZeroPageIndirectIndexedWithY(0x12).addr(&cpu, &mem), 0x1334);
+	assert_eq!(ZeroPageIndirectIndexedWithY(0x12).get(&cpu, &mem), 0x47);
+	ZeroPageIndirectIndexedWithY(0x12).set(&mut cpu, &mut mem, 0x47);
 }
