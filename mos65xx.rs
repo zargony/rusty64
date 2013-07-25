@@ -8,6 +8,7 @@ use testmemory::TestMemory;
 // General information on 65xx: http://en.wikipedia.org/wiki/MOS_Technology_6510
 // Web simulator and much info: http://e-tradition.net/bytes/6502/
 // Good reference and overview: http://www.obelisk.demon.co.uk/index.html
+// Processor bugs and caveats : http://www.textfiles.com/apple/6502.bugs.txt
 
 static NMI_VECTOR: u16 = 0xfffa;
 static RESET_VECTOR: u16 = 0xfffc;
