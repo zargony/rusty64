@@ -30,6 +30,13 @@ enum Operand {
 }
 
 impl Operand {
+	fn indirect<M: Addressable<u16>> (mem: &M, addr: u16) -> u16 {
+		// Get a little endian u16 from the given address, simulating the 6502 MSB bug
+		// (i.e. take values from $c0ff/$c000 instead of $c0ff/$c100)
+		let addr1 = (addr & 0xff00) | (addr+1 & 0x00ff);
+		mem.get(addr) as u16 | mem.get(addr1) as u16 << 8
+	}
+
 	fn addr<M: Addressable<u16>> (&self, cpu: &Mos6502, mem: &M) -> u16 {
 		match *self {
 			Implied								=> fail!("mos65xx: Implied operand is never targetted to an address"),
@@ -39,7 +46,7 @@ impl Operand {
 			Absolute(addr)						=> addr,
 			AbsoluteIndexedWithX(addr)			=> addr + cpu.x as u16,
 			AbsoluteIndexedWithY(addr)			=> addr + cpu.y as u16,
-			Indirect(addr)						=> mem.get_le(addr),
+			Indirect(addr)						=> Operand::indirect(mem, addr),
 			ZeroPage(addr)						=> addr as u16,
 			ZeroPageIndexedWithX(addr)			=> (addr + cpu.x) as u16,						// no page transition
 			ZeroPageIndexedWithY(addr)			=> (addr + cpu.y) as u16,						// no page transition
@@ -165,4 +172,12 @@ fn test_addressing_modes () {
 	assert_eq!(ZeroPageIndirectIndexedWithY(0x12).addr(&cpu, &mem), 0x1334);
 	assert_eq!(ZeroPageIndirectIndexedWithY(0x12).get(&cpu, &mem), 0x47);
 	ZeroPageIndirectIndexedWithY(0x12).set(&mut cpu, &mut mem, 0x47);
+}
+
+#[test]
+fn test_indirect_addressing_bug () {
+	let cpu = Mos6502 { pc: 0x1337, ac: 0x88, x: 0x11, y: 0x22, sr: 0, sp: 0 };
+	let mem = TestMemory::new::<u16>();
+	// Indirect jump to ($c0ff) will get erroneously address from $c0ff/$c000 instead of $c0ff/$c100
+	assert_eq!(Indirect(0xc0ff).addr(&cpu, &mem), 0xc0bf);	// must be $c0bf instead of $c1bf
 }
