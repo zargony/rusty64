@@ -74,16 +74,26 @@ impl Operand {
 // Good reference and overview: http://www.obelisk.demon.co.uk/index.html
 // Processor bugs and caveats : http://www.textfiles.com/apple/6502.bugs.txt
 
-static NMI_VECTOR: u16 = 0xfffa;
-static RESET_VECTOR: u16 = 0xfffc;
-static IRQ_VECTOR: u16 = 0xfffe;
+enum StatusFlag {
+	CarryFlag = 0,
+	ZeroFlag = 1,
+	InterruptDisableFlag = 2,
+	DecimalFlag = 3,
+	BreakFlag = 4,
+	OverflowFlag = 6,
+	NegativeFlag = 7,
+}
+
+static NMI_VECTOR:       u16 = 0xfffa;
+static RESET_VECTOR:     u16 = 0xfffc;
+static IRQ_VECTOR:       u16 = 0xfffe;
 
 pub struct Mos6502 {
 	priv pc: u16,						// program counter
 	priv ac: u8,						// accumulator
 	priv x: u8,							// x register
 	priv y: u8,							// y register
-	priv sr: u8,						// status register (NV-BDIZC: Negative, oVerflow, Break, Decimal, Interrupt, Zero, Carry)
+	priv sr: u8,						// status register (NV-BDIZC: Negative, oVerflow, 1, Break, Decimal, Interrupt, Zero, Carry)
 	priv sp: u8,						// stack pointer
 }
 
@@ -98,6 +108,24 @@ impl Mos6502 {
 
 	fn get_argument<M: Addressable<u16>, T: Int> (&self, mem: &M) -> T {
 		mem.get_le(self.pc + 1)
+	}
+
+	fn get_flag (&self, flag: StatusFlag) -> bool {
+		(self.sr & (1 << flag as u8)) != 0
+	}
+
+	fn set_flag (&mut self, flag: StatusFlag, on: bool) {
+		if on {
+			self.sr |= (1 << flag as u8);
+		} else {
+			self.sr &= !(1 << flag as u8);
+		}
+	}
+
+	fn set_zn (&mut self, value: u8) -> u8 {
+		self.set_flag(ZeroFlag, value == 0);
+		self.set_flag(NegativeFlag, (value as i8) < 0);
+		value
 	}
 
 	pub fn reset<M: Addressable<u16>> (&mut self, mem: &M) {
