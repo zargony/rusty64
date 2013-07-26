@@ -69,6 +69,327 @@ impl Operand {
 }
 
 
+enum Instruction {
+	// Load/store operations
+	LDA,								// load accumulator [N,Z]
+	LDX,								// load X register [N,Z]
+	LDY,								// load Y register [N,Z]
+	STA,								// store accumulator
+	STX,								// store X register
+	STY,								// store Y register
+	// Register transfers
+	TAX,								// transfer accumulator to X [N,Z]
+	TAY,								// transfer accumulator to Y [N,Z]
+	TXA,								// transfer X to accumulator [N,Z]
+	TYA,								// transfer Y to accumulator [N,Z]
+	// Stack operations
+	TSX,								// transfer stack pointer to X [N,Z]
+	TXS,								// transfer X to stack pointer
+	PHA,								// push accumulator on stack
+	PHP,								// push processor status (SR) on stack
+	PLA,								// pull accumulator from stack [N,Z]
+	PLP,								// pull processor status (SR) from stack [all]
+	// Logical
+	AND,								// logical AND [N,Z]
+	EOR,								// exclusive OR [N,Z]
+	ORA,								// logical inclusive OR [N,Z]
+	BIT,								// bit test [N,V,Z]
+	// Arithmetic
+	ADC,								// add with carry [N,V,Z,C]
+	SBC,								// subtract with carry [N,V,Z,C]
+	CMP,								// compare (with accumulator) [N,Z,C]
+	CPX,								// compare with X register [N,Z,C]
+	CPY,								// compare with Y register [N,Z,C]
+	// Increments & decrements
+	INC,								// increment a memory location [N,Z]
+	INX,								// increment X register [N,Z]
+	INY,								// increment Y register [N,Z]
+	DEC,								// decrement a memory location [N,Z]
+	DEX,								// decrement X register [N,Z]
+	DEY,								// decrement Y register [N,Z]
+	// Shifts
+	ASL,								// arithmetic shift left [N,Z,C]
+	LSR,								// logical shift right [N,Z,C]
+	ROL,								// rotate left [N,Z,C]
+	ROR,								// rotate right [N,Z,C]
+	// Jump & calls
+	JMP,								// jump to another location
+	JSR,								// jump to a subroutine
+	RTS,								// return from subroutine
+	// Branches
+	BCC,								// branch if carry flag clear
+	BCS,								// branch if carry flag set
+	BEQ,								// branch if zero flag set
+	BMI,								// branch if negative flag set
+	BNE,								// branch if zero flag clear
+	BPL,								// branch if negative flag clear
+	BVC,								// branch if overflow flag clear
+	BVS,								// branch if overflow flag set
+	// Status flag changes
+	CLC,								// clear carry flag [C]
+	CLD,								// clear decimal mode flag [D]
+	CLI,								// clear interrupt disable flag [I]
+	CLV,								// clear overflow flag [V]
+	SEC,								// set carry flag [C]
+	SED,								// set decimal mode flag [D]
+	SEI,								// set interrupt disable flag [I]
+	// System functions
+	BRK,								// force an interrupt [B]
+	NOP,								// no operation
+	RTI,								// return from interrupt [all]
+}
+
+impl Instruction {
+	fn execute<M: Addressable<u16>> (&self, operand: &Operand, cpu: &mut Mos6502, mem: &mut M) {
+		match *self {
+			// Load/store operations
+			LDA => {
+				cpu.ac = operand.get(cpu, mem);
+				cpu.set_zn(cpu.ac);
+			},
+			LDX => {
+				cpu.x = operand.get(cpu, mem);
+				cpu.set_zn(cpu.x);
+			},
+			LDY => {
+				cpu.y = operand.get(cpu, mem);
+				cpu.set_zn(cpu.y);
+			},
+			STA => {
+				operand.set(cpu, mem, cpu.ac);
+			},
+			STX => {
+				operand.set(cpu, mem, cpu.x);
+			},
+			STY => {
+				operand.set(cpu, mem, cpu.y);
+			},
+			// Register transfers
+			TAX => {
+				cpu.x = cpu.ac;
+				cpu.set_zn(cpu.x);
+			},
+			TAY => {
+				cpu.y = cpu.ac;
+				cpu.set_zn(cpu.y);
+			},
+			TXA => {
+				cpu.ac = cpu.x;
+				cpu.set_zn(cpu.ac);
+			},
+			TYA => {
+				cpu.ac = cpu.y;
+				cpu.set_zn(cpu.ac);
+			},
+			// Stack operations
+			TSX => {
+				cpu.x = cpu.sp;
+				cpu.set_zn(cpu.x);
+			},
+			TXS => {
+				cpu.sp = cpu.x;
+				cpu.set_zn(cpu.sp);
+			},
+			PHA => {
+				fail!("mos65xx: PHA instruction not implemented yet");				// TODO
+			},
+			PHP => {
+				fail!("mos65xx: PHP instruction not implemented yet");				// TODO
+			},
+			PLA => {
+				fail!("mos65xx: PLA instruction not implemented yet");				// TODO
+			},
+			PLP => {
+				fail!("mos65xx: PLP instruction not implemented yet");				// TODO
+			},
+			// Logical
+			AND => {
+				cpu.ac &= operand.get(cpu, mem);
+				cpu.set_zn(cpu.ac);
+			},
+			EOR => {
+				cpu.ac ^= operand.get(cpu, mem);
+				cpu.set_zn(cpu.ac);
+			},
+			ORA => {
+				cpu.ac |= operand.get(cpu, mem);
+				cpu.set_zn(cpu.ac);
+			},
+			BIT => {
+				let value = operand.get(cpu, mem);
+				cpu.set_flag(ZeroFlag, (value & cpu.ac) == 0);
+				cpu.set_flag(NegativeFlag, (value & 0x80) != 0);
+				cpu.set_flag(OverflowFlag, (value & 0x40) != 0);
+			},
+			// Arithmetic
+			ADC => {
+				fail!("mos65xx: ADC instruction not implemented yet");				// TODO
+			},
+			SBC => {
+				fail!("mos65xx: SBC instruction not implemented yet");				// TODO
+			},
+			CMP => {
+				let result = cpu.ac as i16 - operand.get(cpu, mem) as i16;
+				cpu.set_flag(CarryFlag, result >= 0);
+				cpu.set_zn(result as u8);
+			},
+			CPX => {
+				let result = cpu.x as i16 - operand.get(cpu, mem) as i16;
+				cpu.set_flag(CarryFlag, result >= 0);
+				cpu.set_zn(result as u8);
+			},
+			CPY => {
+				let result = cpu.y as i16 - operand.get(cpu, mem) as i16;
+				cpu.set_flag(CarryFlag, result >= 0);
+				cpu.set_zn(result as u8);
+			},
+			// Increments & decrements
+			INC => {
+				let value = operand.get(cpu, mem) + 1;
+				operand.set(cpu, mem, value);
+				cpu.set_zn(value);
+			},
+			INX => {
+				cpu.x += 1;
+				cpu.set_zn(cpu.x);
+			},
+			INY => {
+				cpu.y += 1;
+				cpu.set_zn(cpu.y);
+			},
+			DEC => {
+				let value = operand.get(cpu, mem) - 1;
+				operand.set(cpu, mem, value);
+				cpu.set_zn(value);
+			},
+			DEX => {
+				cpu.x -= 1;
+				cpu.set_zn(cpu.x);
+			},
+			DEY => {
+				cpu.y -= 1;
+				cpu.set_zn(cpu.y);
+			},
+			// Shifts
+			ASL => {
+				let value = operand.get(cpu, mem);
+				cpu.set_flag(CarryFlag, (value & 0x80) != 0);
+				let result = value << 1;
+				operand.set(cpu, mem, result);
+				cpu.set_zn(result);
+			},
+			LSR => {
+				let value = operand.get(cpu, mem);
+				cpu.set_flag(CarryFlag, (value & 0x01) != 0);
+				let result = value >> 1;
+				operand.set(cpu, mem, result);
+				cpu.set_zn(result);
+			},
+			ROL => {
+				let carry = cpu.get_flag(CarryFlag);
+				let value = operand.get(cpu, mem);
+				cpu.set_flag(CarryFlag, (value & 0x80) != 0);
+				let mut result = value << 1;
+				if carry { result |= 0x01 }
+				operand.set(cpu, mem, result);
+				cpu.set_zn(result);
+			},
+			ROR => {
+				let carry = cpu.get_flag(CarryFlag);
+				let value = operand.get(cpu, mem);
+				cpu.set_flag(CarryFlag, (value & 0x01) != 0);
+				let mut result = value >> 1;
+				if carry { result |= 0x80 }
+				operand.set(cpu, mem, result);
+				cpu.set_zn(result);
+			},
+			// Jump & calls
+			JMP => {
+				cpu.pc = operand.addr(cpu, mem);
+			},
+			JSR => {
+				fail!("mos65xx: JSR instruction not implemented yet");				// TODO
+			},
+			RTS => {
+				fail!("mos65xx: RTS instruction not implemented yet");				// TODO
+			},
+			// Branches
+			BCC => {
+				if !cpu.get_flag(CarryFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BCS => {
+				if cpu.get_flag(CarryFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BEQ => {
+				if cpu.get_flag(ZeroFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BMI => {
+				if cpu.get_flag(NegativeFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BNE => {
+				if !cpu.get_flag(ZeroFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BPL => {
+				if !cpu.get_flag(NegativeFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BVC => {
+				if !cpu.get_flag(OverflowFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BVS => {
+				if cpu.get_flag(OverflowFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			// Status flag changes
+			CLC => {
+				cpu.set_flag(CarryFlag, false);
+			},
+			CLD => {
+				cpu.set_flag(DecimalFlag, false);
+			},
+			CLI => {
+				cpu.set_flag(InterruptDisableFlag, false);
+			},
+			CLV => {
+				cpu.set_flag(OverflowFlag, false);
+			},
+			SEC => {
+				cpu.set_flag(CarryFlag, true);
+			},
+			SED => {
+				cpu.set_flag(DecimalFlag, true);
+			},
+			SEI => {
+				cpu.set_flag(InterruptDisableFlag, true);
+			},
+			// System functions
+			BRK => {
+				fail!("mos65xx: BRK instruction not implemented yet");				// TODO
+			},
+			NOP => {
+			},
+			RTI => {
+				fail!("mos65xx: RTI instruction not implemented yet");				// TODO
+			},
+		}
+	}
+}
+
+
 // General information on 65xx: http://en.wikipedia.org/wiki/MOS_Technology_6510
 // Web simulator and much info: http://e-tradition.net/bytes/6502/
 // Good reference and overview: http://www.obelisk.demon.co.uk/index.html
