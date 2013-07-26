@@ -326,10 +326,12 @@ impl Instruction {
 				cpu.pc = operand.addr(cpu, mem);
 			},
 			JSR => {
-				fail!("mos65xx: JSR instruction not implemented yet");				// TODO
+				cpu.push(mem, cpu.pc - 1);
+				cpu.pc = operand.addr(cpu, mem);
 			},
 			RTS => {
-				fail!("mos65xx: RTS instruction not implemented yet");				// TODO
+				cpu.pc = cpu.pop(mem);
+				cpu.pc += 1;
 			},
 			// Branches
 			BCC => {
