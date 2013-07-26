@@ -491,9 +491,9 @@ impl Mos6502 {
 		// On reset, the interrupt-disable flag is set (and the decimal flag is cleared in the CMOS version 65c02).
 		// The other bits and all registers (including the stack pointer are unspecified and might contain random values.
 		// Execution begins at the address pointed to by the reset vector at address $FFFC.
-		debug!("mos65xx: Reset");
 		self.pc = mem.get_le(RESET_VECTOR);
 		self.sr = 0x24;
+		debug!("mos65xx: Reset! Start at ($%04X) -> $%04X", RESET_VECTOR as uint, self.pc as uint);
 	}
 
 	pub fn step<M: Addressable<u16>> (&mut self, mem: &mut M) -> uint {
