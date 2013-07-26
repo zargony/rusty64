@@ -632,8 +632,8 @@ impl Mos6502 {
 			// Jump & calls
 			0x4c => (JMP, Absolute(self.get_argument(mem)), 3),
 			0x6c => (JMP, Indirect(self.get_argument(mem)), 5),
-			0x20 => (JMP, Absolute(self.get_argument(mem)), 6),
-			0x60 => (JMP, Implied, 6),
+			0x20 => (JSR, Absolute(self.get_argument(mem)), 6),
+			0x60 => (RTS, Implied, 6),
 			// Branches
 			0x90 => (BCC, Relative(self.get_argument(mem)), 2),					// FIXME: +1 if branched, +2 if page crossed
 			0xb0 => (BCS, Relative(self.get_argument(mem)), 2),					// FIXME: +1 if branched, +2 if page crossed
