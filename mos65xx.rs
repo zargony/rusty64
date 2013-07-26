@@ -475,6 +475,17 @@ impl Mos6502 {
 		value
 	}
 
+	fn push<M: Addressable<u16>, T: Int> (&mut self, mem: &mut M, value: T) {
+		self.sp -= sys::size_of::<T>() as u8;
+		mem.set_le(0x0100 + self.sp as u16 + 1, value);
+	}
+
+	fn pop<M: Addressable<u16>, T: Int> (&mut self, mem: &M) -> T {
+		let value: T = mem.get_le(0x0100 + self.sp as u16 + 1);
+		self.sp += sys::size_of::<T>() as u8;
+		value
+	}
+
 	fn get_opcode<M: Addressable<u16>> (&mut self, mem: &M) -> u8 {
 		let opcode = mem.get(self.pc);
 		self.pc += 1;
