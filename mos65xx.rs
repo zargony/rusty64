@@ -100,6 +100,15 @@ impl Mos6502 {
 		mem.get_le(self.pc + 1)
 	}
 
+	pub fn reset<M: Addressable<u16>> (&mut self, mem: &M) {
+		// On reset, the interrupt-disable flag is set (and the decimal flag is cleared in the CMOS version 65c02).
+		// The other bits and all registers (including the stack pointer are unspecified and might contain random values.
+		// Execution begins at the address pointed to by the reset vector at address $FFFC.
+		debug!("mos65xx: Reset");
+		self.pc = mem.get_le(RESET_VECTOR);
+		self.sr = 0x24;
+	}
+
 	pub fn step<M: Addressable<u16>> (&mut self, mem: &mut M) -> uint {
 		// TODO
 		0
@@ -117,6 +126,10 @@ impl Mos6510 {
 	pub fn new () -> Mos6510 {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
 		Mos6510 { cpu: Mos6502::new(), port_ddr: 0, port_dat: 0 }
+	}
+
+	pub fn reset<M: Addressable<u16>> (&mut self, mem: &M) {
+		self.cpu.reset(mem);
 	}
 
 	pub fn step<M: Addressable<u16>> (&mut self, mem: &mut M) -> uint {
