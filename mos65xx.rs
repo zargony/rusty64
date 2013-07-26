@@ -1,6 +1,6 @@
 use addressable::Addressable;
 use addressable::AddressableUtil;
-use std::sys;
+use std::{sys, u8};
 
 #[cfg(test)]
 use testmemory::TestMemory;
@@ -497,7 +497,9 @@ impl Mos6502 {
 	}
 
 	pub fn step<M: Addressable<u16>> (&mut self, mem: &mut M) -> uint {
-		let (instruction, operand, cycles) = match self.get_opcode(mem) {
+		let old_pc = self.pc;
+		let opcode = self.get_opcode(mem);
+		let (instruction, operand, cycles) = match opcode {
 			// Load/store operations
 			0xa9 => (LDA, Immediate(self.get_argument(mem)), 2),
 			0xa5 => (LDA, ZeroPage(self.get_argument(mem)), 3),
@@ -661,9 +663,10 @@ impl Mos6502 {
 			0xea => (NOP, Implied, 2),
 			0x40 => (RTI, Implied, 6),
 			// Illegal instruction
-			op => fail!("mos65xx: Illegal instruction $%02x at $%04x", op as uint, self.pc as uint),
+			opcode => fail!("mos65xx: Illegal instruction $%02x at $%04x", opcode as uint, self.pc as uint),
 		};
-		debug!("mos65xx: $%04x  cycles %?  instruction %?  operand %?", self.pc as uint, cycles, instruction, operand);
+		instruction.execute(&operand, self, mem);
+		debug!("mos65xx: %04X  %02X %02X %02X  %-3s %-15s  (%u) AC:%02X X:%02X Y:%02X SR:%02X SP:%02X NV-BDIZC:%s", old_pc as uint, mem.get(old_pc) as uint, mem.get(old_pc+1) as uint, mem.get(old_pc+2) as uint, instruction.as_str(), operand.as_str(), cycles, self.ac as uint, self.x as uint, self.y as uint, self.sr as uint, self.sp as uint, u8::to_str_radix(self.sr, 2));
 		cycles
 	}
 }
