@@ -50,20 +50,20 @@ impl Operand {
 	fn get<M: Addressable<u16>> (&self, cpu: &Mos6502, mem: &M) -> u8 {
 		match *self {
 			Implied								=> fail!("mos65xx: Implied operand never has a value"),
-			Immediate(val)						=> val,
+			Immediate(value)					=> value,
 			Accumulator							=> cpu.ac,
 			Relative(_target)					=> fail!("mos65xx: Relative operand never has a value"),
 			op									=> { let addr = op.addr(cpu, mem); mem.get(addr) },
 		}
 	}
 
-	fn set<M: Addressable<u16>> (&self, cpu: &mut Mos6502, mem: &mut M, val: u8) {
+	fn set<M: Addressable<u16>> (&self, cpu: &mut Mos6502, mem: &mut M, value: u8) {
 		match *self {
 			Implied								=> fail!("mos65xx: Implied operand never sets a value"),
 			Immediate(_)						=> fail!("mos65xx: Immediate operand never sets a value"),
-			Accumulator							=> cpu.ac = val,
+			Accumulator							=> cpu.ac = value,
 			Relative(_target)					=> fail!("mos65xx: Relative operand never sets a value"),
-			op									=> { let addr = op.addr(cpu, mem); mem.set(addr, val); },
+			op									=> { let addr = op.addr(cpu, mem); mem.set(addr, value); },
 		}
 	}
 }
