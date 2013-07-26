@@ -188,7 +188,6 @@ impl Instruction {
 			},
 			TXS => {
 				cpu.sp = cpu.x;
-				cpu.set_zn(cpu.sp);
 			},
 			PHA => {
 				fail!("mos65xx: PHA instruction not implemented yet");				// TODO
