@@ -677,7 +677,7 @@ impl Mos6502 {
 			opcode => fail!("mos65xx: Illegal instruction $%02x at $%04x", opcode as uint, self.pc as uint),
 		};
 		instruction.execute(&operand, self, mem);
-		debug!("mos65xx: %04X  %02X %02X %02X  %-3s %-15s  (%u) AC:%02X X:%02X Y:%02X SR:%02X SP:%02X NV-BDIZC:%s", old_pc as uint, mem.get(old_pc) as uint, mem.get(old_pc+1) as uint, mem.get(old_pc+2) as uint, instruction.as_str(), operand.as_str(), cycles, self.ac as uint, self.x as uint, self.y as uint, self.sr as uint, self.sp as uint, u8::to_str_radix(self.sr, 2));
+		debug!("mos65xx: %04X  %02X %02X %02X  %-3s %-15s  -(%u)-> AC:%02X X:%02X Y:%02X SR:%02X SP:%02X NV-BDIZC:%8s", old_pc as uint, mem.get(old_pc) as uint, mem.get(old_pc+1) as uint, mem.get(old_pc+2) as uint, instruction.as_str(), operand.as_str(), cycles, self.ac as uint, self.x as uint, self.y as uint, self.sr as uint, self.sp as uint, u8::to_str_radix(self.sr, 2));
 		cycles
 	}
 }
