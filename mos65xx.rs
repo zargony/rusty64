@@ -66,6 +66,24 @@ impl Operand {
 			op									=> { let addr = op.addr(cpu, mem); mem.set(addr, value); },
 		}
 	}
+
+	fn as_str (&self) -> ~str {
+		match *self {
+			Implied => ~"",
+			Immediate(value) => fmt!("#$%02X", value as uint),
+			Accumulator => ~"A",
+			Relative(offset) => fmt!("%c$%02X", if offset < 0 { '-' } else { '+' }, offset.abs() as uint),
+			Absolute(addr) => fmt!("$%04X", addr as uint),
+			AbsoluteIndexedWithX(addr) => fmt!("$%04X,X", addr as uint),
+			AbsoluteIndexedWithY(addr) => fmt!("$%04X,Y", addr as uint),
+			Indirect(addr) => fmt!("($%04X)", addr as uint),
+			ZeroPage(addr) => fmt!("$%02X", addr as uint),
+			ZeroPageIndexedWithX(addr) => fmt!("$%02X,X", addr as uint),
+			ZeroPageIndexedWithY(addr) => fmt!("$%02X,Y", addr as uint),
+			ZeroPageIndexedWithXIndirect(addr) => fmt!("($%02X,X)", addr as uint),
+			ZeroPageIndirectIndexedWithY(addr) => fmt!("($%02X),Y", addr as uint),
+		}
+	}
 }
 
 
@@ -386,6 +404,22 @@ impl Instruction {
 			},
 		}
 	}
+
+	fn as_str (&self) -> &'static str {
+		match *self {
+			LDA => "LDA", LDX => "LDX", LDY => "LDY", STA => "STA", STX => "STX", STY => "STY",
+			TAX => "TAX", TAY => "TAY", TXA => "TXA", TYA => "TYA",
+			TSX => "TSX", TXS => "TXS", PHA => "PHA", PHP => "PHP", PLA => "PLA", PLP => "PLP",
+			AND => "AND", EOR => "EOR", ORA => "ORA", BIT => "BIT",
+			ADC => "ADC", SBC => "SBC", CMP => "CMP", CPX => "CPX", CPY => "CPY",
+			INC => "INC", INX => "INX", INY => "INY", DEC => "DEC", DEX => "DEX", DEY => "DEY",
+			ASL => "ASL", LSR => "LSR", ROL => "ROL", ROR => "ROR",
+			JMP => "JMP", JSR => "JSR", RTS => "RTS",
+			BCC => "BCC", BCS => "BCS", BEQ => "BEQ", BMI => "BMI", BNE => "BNE", BPL => "BPL", BVC => "BVC", BVS => "BVS",
+			CLC => "CLC", CLD => "CLD", CLI => "CLI", CLV => "CLV", SEC => "SEC", SED => "SED", SEI => "SEI",
+			BRK => "BRK", NOP => "NOP", RTI => "RTI",
+		}
+	}
 }
 
 
@@ -459,6 +493,7 @@ impl Mos6502 {
 
 	pub fn step<M: Addressable<u16>> (&mut self, mem: &mut M) -> uint {
 		let (instruction, operand, cycles) = match self.get_opcode(mem) {
+			// Load/store operations
 			0xa9 => (LDA, Immediate(self.get_argument(mem)), 2),
 			0xa5 => (LDA, ZeroPage(self.get_argument(mem)), 3),
 			0xb5 => (LDA, ZeroPageIndexedWithX(self.get_argument(mem)), 4),
@@ -490,16 +525,19 @@ impl Mos6502 {
 			0x84 => (STY, ZeroPage(self.get_argument(mem)), 3),
 			0x94 => (STY, ZeroPageIndexedWithX(self.get_argument(mem)), 4),
 			0x8c => (STY, Absolute(self.get_argument(mem)), 4),
+			// Register transfers
 			0xaa => (TAX, Implied, 2),
 			0xa8 => (TAY, Implied, 2),
 			0x8a => (TXA, Implied, 2),
 			0x98 => (TYA, Implied, 2),
 			0xba => (TSX, Implied, 2),
 			0x9a => (TXS, Implied, 2),
+			// Stack operations
 			0x48 => (PHA, Implied, 3),
 			0x08 => (PHP, Implied, 3),
 			0x68 => (PLA, Implied, 4),
 			0x28 => (PLP, Implied, 4),
+			// Logical
 			0x29 => (AND, Immediate(self.get_argument(mem)), 2),
 			0x25 => (AND, ZeroPage(self.get_argument(mem)), 3),
 			0x35 => (AND, ZeroPageIndexedWithX(self.get_argument(mem)), 4),
@@ -526,6 +564,7 @@ impl Mos6502 {
 			0x11 => (ORA, ZeroPageIndirectIndexedWithY(self.get_argument(mem)), 5),		// FIXME: +1 cycle if page crossed
 			0x24 => (BIT, ZeroPage(self.get_argument(mem)), 3),
 			0x2c => (BIT, Absolute(self.get_argument(mem)), 4),
+			// Arithmetic
 			0x69 => (ADC, Immediate(self.get_argument(mem)), 2),
 			0x65 => (ADC, ZeroPage(self.get_argument(mem)), 3),
 			0x75 => (ADC, ZeroPageIndexedWithX(self.get_argument(mem)), 4),
@@ -556,6 +595,7 @@ impl Mos6502 {
 			0xc0 => (CPY, Immediate(self.get_argument(mem)), 2),
 			0xc4 => (CPY, ZeroPage(self.get_argument(mem)), 3),
 			0xcc => (CPY, Absolute(self.get_argument(mem)), 4),
+			// Increments & decrements
 			0xe6 => (INC, ZeroPage(self.get_argument(mem)), 5),
 			0xf6 => (INC, ZeroPageIndexedWithX(self.get_argument(mem)), 6),
 			0xee => (INC, Absolute(self.get_argument(mem)), 6),
@@ -568,6 +608,7 @@ impl Mos6502 {
 			0xde => (DEC, AbsoluteIndexedWithX(self.get_argument(mem)), 7),
 			0xca => (DEX, Implied, 2),
 			0x88 => (DEY, Implied, 2),
+			// Shifts
 			0x0a => (ASL, Accumulator, 2),
 			0x06 => (ASL, ZeroPage(self.get_argument(mem)), 5),
 			0x16 => (ASL, ZeroPageIndexedWithX(self.get_argument(mem)), 6),
@@ -588,10 +629,12 @@ impl Mos6502 {
 			0x76 => (ROR, ZeroPageIndexedWithX(self.get_argument(mem)), 6),
 			0x6e => (ROR, Absolute(self.get_argument(mem)), 6),
 			0x7e => (ROR, AbsoluteIndexedWithX(self.get_argument(mem)), 7),
+			// Jump & calls
 			0x4c => (JMP, Absolute(self.get_argument(mem)), 3),
 			0x6c => (JMP, Indirect(self.get_argument(mem)), 5),
 			0x20 => (JMP, Absolute(self.get_argument(mem)), 6),
 			0x60 => (JMP, Implied, 6),
+			// Branches
 			0x90 => (BCC, Relative(self.get_argument(mem)), 2),					// FIXME: +1 if branched, +2 if page crossed
 			0xb0 => (BCS, Relative(self.get_argument(mem)), 2),					// FIXME: +1 if branched, +2 if page crossed
 			0xf0 => (BEQ, Relative(self.get_argument(mem)), 2),					// FIXME: +1 if branched, +2 if page crossed
@@ -600,6 +643,7 @@ impl Mos6502 {
 			0x10 => (BPL, Relative(self.get_argument(mem)), 2),					// FIXME: +1 if branched, +2 if page crossed
 			0x50 => (BVC, Relative(self.get_argument(mem)), 2),					// FIXME: +1 if branched, +2 if page crossed
 			0x70 => (BVS, Relative(self.get_argument(mem)), 2),					// FIXME: +1 if branched, +2 if page crossed
+			// Status flag changes
 			0x18 => (CLC, Implied, 2),
 			0xd8 => (CLD, Implied, 2),
 			0x58 => (CLI, Implied, 2),
@@ -607,9 +651,11 @@ impl Mos6502 {
 			0x38 => (SEC, Implied, 2),
 			0xf8 => (SED, Implied, 2),
 			0x78 => (SEI, Implied, 2),
+			// System functions
 			0x00 => (BRK, Implied, 7),
 			0xea => (NOP, Implied, 2),
 			0x40 => (RTI, Implied, 6),
+			// Illegal instruction
 			op => fail!("mos65xx: Illegal instruction $%02x at $%04x", op as uint, self.pc as uint),
 		};
 		debug!("mos65xx: $%04x  cycles %?  instruction %?  operand %?", self.pc as uint, cycles, instruction, operand);
