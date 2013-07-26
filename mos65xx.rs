@@ -1,5 +1,6 @@
 use addressable::Addressable;
 use addressable::AddressableUtil;
+use std::sys;
 
 #[cfg(test)]
 use testmemory::TestMemory;
@@ -456,14 +457,6 @@ impl Mos6502 {
 		Mos6502 { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0 }
 	}
 
-	fn get_opcode<M: Addressable<u16>> (&self, mem: &M) -> u8 {
-		mem.get(self.pc)
-	}
-
-	fn get_argument<M: Addressable<u16>, T: Int> (&self, mem: &M) -> T {
-		mem.get_le(self.pc + 1)
-	}
-
 	fn get_flag (&self, flag: StatusFlag) -> bool {
 		(self.sr & (1 << flag as u8)) != 0
 	}
@@ -480,6 +473,18 @@ impl Mos6502 {
 		self.set_flag(ZeroFlag, value == 0);
 		self.set_flag(NegativeFlag, (value as i8) < 0);
 		value
+	}
+
+	fn get_opcode<M: Addressable<u16>> (&mut self, mem: &M) -> u8 {
+		let opcode = mem.get(self.pc);
+		self.pc += 1;
+		opcode
+	}
+
+	fn get_argument<M: Addressable<u16>, T: Int> (&mut self, mem: &M) -> T {
+		let argument: T = mem.get_le(self.pc);
+		self.pc += sys::size_of::<T>() as u16;
+		argument
 	}
 
 	pub fn reset<M: Addressable<u16>> (&mut self, mem: &M) {
