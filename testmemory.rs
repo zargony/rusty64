@@ -10,12 +10,12 @@ impl<ADDR: Int> TestMemory<ADDR> {
 }
 
 impl<ADDR: Int> Addressable<ADDR> for TestMemory<ADDR> {
-	pub fn get (&self, addr: ADDR) -> u8 {
+	fn get (&self, addr: ADDR) -> u8 {
 		let i: uint = num::cast(addr);
 		(i & 0xff) as u8 + (i >> 8) as u8
 	}
 
-	pub fn set (&mut self, addr: ADDR, data: u8) {
+	fn set (&mut self, addr: ADDR, data: u8) {
 		let i: uint = num::cast(addr);
 		let expected = (i & 0xff) as u8 + (i >> 8) as u8;
 		if data != expected {

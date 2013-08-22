@@ -13,7 +13,7 @@ impl<ADDR: Int> Ram<ADDR> {
 	}
 
 	pub fn new_sized (size: uint) -> Ram<ADDR> {
-		Ram { data: vec::from_elem(size, 0) }
+		Ram { data: vec::from_elem(size, 0u8) }
 	}
 
 	pub fn size (&self) -> uint {
@@ -22,13 +22,13 @@ impl<ADDR: Int> Ram<ADDR> {
 }
 
 impl<ADDR: Int> Addressable<ADDR> for Ram<ADDR> {
-	pub fn get (&self, addr: ADDR) -> u8 {
+	fn get (&self, addr: ADDR) -> u8 {
 		let i: uint = num::cast(addr);
 		if i >= self.data.len() { fail!("ram: Read beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
 		self.data[i]
 	}
 
-	pub fn set (&mut self, addr: ADDR, data: u8) {
+	fn set (&mut self, addr: ADDR, data: u8) {
 		let i: uint = num::cast(addr);
 		if i >= self.data.len() { fail!("ram: Write beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
 		self.data[i] = data;

@@ -28,13 +28,13 @@ impl<ADDR: Int> Rom<ADDR> {
 }
 
 impl<ADDR: Int> Addressable<ADDR> for Rom<ADDR> {
-	pub fn get (&self, addr: ADDR) -> u8 {
+	fn get (&self, addr: ADDR) -> u8 {
 		let i: uint = num::cast(addr);
 		if i >= self.data.len() { fail!("rom: Read beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
 		self.data[i]
 	}
 
-	pub fn set (&mut self, addr: ADDR, _data: u8) {
+	fn set (&mut self, addr: ADDR, _data: u8) {
 		let i: uint = num::cast(addr);
 		warn!("rom: Ignoring write to read-only memory ($%x)", i);
 	}
