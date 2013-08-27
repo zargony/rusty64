@@ -14,8 +14,11 @@ clean:
 
 .PHONY: all run check clean
 
-c64: c64.rs *.rs
+%: %.rs *.rs
 	$(RUSTC) $(RUSTFLAGS) --bin -o $@ $<
 
-c64_test: c64.rs *.rs
+lib%.dylib: %.rs *.rs
+	$(RUSTC) $(RUSTFLAGS) --lib -o $@ $<
+
+%_test: %.rs *.rs
 	$(RUSTC) $(RUSTFLAGS) --test -o $@ $<
