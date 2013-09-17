@@ -20,7 +20,8 @@ pub trait Addressable<ADDR: Int> {
 	}
 
 	fn get_be<T: Int> (&self, addr: ADDR) -> T {
-		num::cast(self.get_be_n(addr, num::Primitive::bytes::<T>()))
+		let none: Option<T> = None;
+		num::cast(self.get_be_n(addr, num::Primitive::bytes(none)))
 	}
 
 	fn get_le_n (&self, addr: ADDR, nbytes: uint) -> u64 {
@@ -35,7 +36,8 @@ pub trait Addressable<ADDR: Int> {
 	}
 
 	fn get_le<T: Int> (&self, addr: ADDR) -> T {
-		num::cast(self.get_le_n(addr, num::Primitive::bytes::<T>()))
+		let none: Option<T> = None;
+		num::cast(self.get_le_n(addr, num::Primitive::bytes(none)))
 	}
 
 	fn setx (&mut self, addr: ADDR, offset: int, data: u8) {
@@ -52,7 +54,8 @@ pub trait Addressable<ADDR: Int> {
 	}
 
 	fn set_be<T: Int> (&mut self, addr: ADDR, val: T) {
-		self.set_be_n(addr, num::Primitive::bytes::<T>(), num::cast(val));
+		let none: Option<T> = None;
+		self.set_be_n(addr, num::Primitive::bytes(none), num::cast(val));
 	}
 
 	fn set_le_n (&mut self, addr: ADDR, nbytes: uint, val: u64) {
@@ -65,7 +68,8 @@ pub trait Addressable<ADDR: Int> {
 	}
 
 	fn set_le<T: Int> (&mut self, addr: ADDR, val: T) {
-		self.set_le_n(addr, num::Primitive::bytes::<T>(), num::cast(val));
+		let none: Option<T> = None;
+		self.set_le_n(addr, num::Primitive::bytes(none), num::cast(val));
 	}
 }
 

@@ -8,8 +8,8 @@ pub struct Ram<ADDR> {
 
 impl<ADDR: Int> Ram<ADDR> {
 	pub fn new () -> Ram<ADDR> {
-		let last_addr: uint = num::cast(num::Bounded::max_value::<ADDR>());
-		Ram::new_sized(last_addr + 1)
+		let last_addr: ADDR = num::Bounded::max_value();
+		Ram::new_sized(1u + num::cast(last_addr))
 	}
 
 	pub fn new_sized (size: uint) -> Ram<ADDR> {

@@ -709,7 +709,7 @@ impl Mos6510 {
 #[test]
 fn test_addressing_modes () {
 	let mut cpu = Mos6502 { pc: 0x1337, ac: 0x88, x: 0x11, y: 0x22, sr: 0, sp: 0 };
-	let mut mem = TestMemory::new::<u16>();
+	let mut mem: TestMemory<u16> = TestMemory::new();
 	// Immediate
 	assert_eq!(Immediate(0x55).get(&cpu, &mem), 0x55);
 	// Accumulator
@@ -759,7 +759,7 @@ fn test_addressing_modes () {
 #[test]
 fn test_indirect_addressing_bug () {
 	let cpu = Mos6502 { pc: 0x1337, ac: 0x88, x: 0x11, y: 0x22, sr: 0, sp: 0 };
-	let mem = TestMemory::new::<u16>();
+	let mem: TestMemory<u16> = TestMemory::new();
 	// Indirect jump to ($c0ff) will get erroneously address from $c0ff/$c000 instead of $c0ff/$c100
 	assert_eq!(Indirect(0xc0ff).addr(&cpu, &mem), 0xc0bf);	// must be $c0bf instead of $c1bf
 }
