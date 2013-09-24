@@ -1,5 +1,5 @@
 RUSTC ?= rustc
-RUSTFLAGS ?= -O
+RUSTFLAGS ?= -O --cfg ndebug
 
 all: c64
 
