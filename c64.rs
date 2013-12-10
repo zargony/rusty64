@@ -1,5 +1,5 @@
 #[desc = "C64 emulator"];
-#[author = "Andreas Neuhaus <zargony@zargony.com>"];
+#[copyright = "Andreas Neuhaus <zargony@zargony.com>"];
 #[crate_type = "bin"];
 
 use addressable::Addressable;
@@ -41,9 +41,9 @@ impl C64Memory {
 	fn new () -> C64Memory {
 		C64Memory {
 			ram: Ram::new(),
-			kernal: Rom::new(&Path("kernal.rom")),
-			basic: Rom::new(&Path("basic.rom")),
-			characters: Rom::new(&Path("characters.rom")),
+			kernal: Rom::new(&Path::new("kernal.rom")),
+			basic: Rom::new(&Path::new("basic.rom")),
+			characters: Rom::new(&Path::new("characters.rom")),
 		}
 	}
 }

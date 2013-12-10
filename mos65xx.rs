@@ -1,5 +1,5 @@
 use addressable::Addressable;
-use std::sys;
+use std::mem;
 
 #[cfg(test)]
 use testmemory::TestMemory;
@@ -70,18 +70,18 @@ impl Operand {
 	fn as_str (&self) -> ~str {
 		match *self {
 			Implied => ~"",
-			Immediate(value) => fmt!("#$%02X", value as uint),
+			Immediate(value) => format!("\\#${:02X}", value as uint),
 			Accumulator => ~"A",
-			Relative(offset) => fmt!("%c$%02X", if offset < 0 { '-' } else { '+' }, offset.abs() as uint),
-			Absolute(addr) => fmt!("$%04X", addr as uint),
-			AbsoluteIndexedWithX(addr) => fmt!("$%04X,X", addr as uint),
-			AbsoluteIndexedWithY(addr) => fmt!("$%04X,Y", addr as uint),
-			Indirect(addr) => fmt!("($%04X)", addr as uint),
-			ZeroPage(addr) => fmt!("$%02X", addr as uint),
-			ZeroPageIndexedWithX(addr) => fmt!("$%02X,X", addr as uint),
-			ZeroPageIndexedWithY(addr) => fmt!("$%02X,Y", addr as uint),
-			ZeroPageIndexedWithXIndirect(addr) => fmt!("($%02X,X)", addr as uint),
-			ZeroPageIndirectIndexedWithY(addr) => fmt!("($%02X),Y", addr as uint),
+			Relative(offset) => format!("{:c}${:02X}", if offset < 0 { '-' } else { '+' }, offset.abs() as uint),
+			Absolute(addr) => format!("${:04X}", addr as uint),
+			AbsoluteIndexedWithX(addr) => format!("${:04X},X", addr as uint),
+			AbsoluteIndexedWithY(addr) => format!("${:04X},Y", addr as uint),
+			Indirect(addr) => format!("(${:04X})", addr as uint),
+			ZeroPage(addr) => format!("${:02X}", addr as uint),
+			ZeroPageIndexedWithX(addr) => format!("${:02X},X", addr as uint),
+			ZeroPageIndexedWithY(addr) => format!("${:02X},Y", addr as uint),
+			ZeroPageIndexedWithXIndirect(addr) => format!("(${:02X},X)", addr as uint),
+			ZeroPageIndirectIndexedWithY(addr) => format!("(${:02X}),Y", addr as uint),
 		}
 	}
 }
@@ -478,13 +478,13 @@ impl Mos6502 {
 	}
 
 	fn push<M: Addressable<u16>, T: Int> (&mut self, mem: &mut M, value: T) {
-		self.sp -= sys::size_of::<T>() as u8;
+		self.sp -= mem::size_of::<T>() as u8;
 		mem.set_le(0x0100 + self.sp as u16 + 1, value);
 	}
 
 	fn pop<M: Addressable<u16>, T: Int> (&mut self, mem: &M) -> T {
 		let value: T = mem.get_le(0x0100 + self.sp as u16 + 1);
-		self.sp += sys::size_of::<T>() as u8;
+		self.sp += mem::size_of::<T>() as u8;
 		value
 	}
 
@@ -496,7 +496,7 @@ impl Mos6502 {
 
 	fn get_argument<M: Addressable<u16>, T: Int> (&mut self, mem: &M) -> T {
 		let argument: T = mem.get_le(self.pc);
-		self.pc += sys::size_of::<T>() as u16;
+		self.pc += mem::size_of::<T>() as u16;
 		argument
 	}
 
@@ -506,7 +506,7 @@ impl Mos6502 {
 		// Execution begins at the address pointed to by the reset vector at address $FFFC.
 		self.pc = mem.get_le(RESET_VECTOR);
 		self.sr = 0x24;
-		debug!("mos65xx: Reset! Start at ($%04X) -> $%04X", RESET_VECTOR as uint, self.pc as uint);
+		debug!("mos65xx: Reset! Start at (${:04X}) -> ${:04X}", RESET_VECTOR as uint, self.pc as uint);
 	}
 
 	pub fn step<M: Addressable<u16>> (&mut self, mem: &mut M) -> uint {
@@ -676,10 +676,10 @@ impl Mos6502 {
 			0xea => (NOP, Implied, 2),
 			0x40 => (RTI, Implied, 6),
 			// Illegal instruction
-			opcode => fail!("mos65xx: Illegal instruction $%02x at $%04x", opcode as uint, self.pc as uint),
+			opcode => fail!("mos65xx: Illegal instruction ${:02X} at ${:04X}", opcode as uint, self.pc as uint),
 		};
 		instruction.execute(&operand, self, mem);
-		debug!("mos65xx: %04X  %02X %02X %02X  %-3s %-15s  -(%u)-> AC:%02X X:%02X Y:%02X SR:%02X SP:%02X NV-BDIZC:%8s", old_pc as uint, mem.get(old_pc) as uint, mem.get(old_pc+1) as uint, mem.get(old_pc+2) as uint, instruction.as_str(), operand.as_str(), cycles, self.ac as uint, self.x as uint, self.y as uint, self.sr as uint, self.sp as uint, self.sr.to_str_radix(2));
+		debug!("mos65xx: {:04X}  {:02X} {:02X} {:02X}  {:-3s} {:-15s}  -({:u})-> AC:{:02X} X:{:02X} Y:{:02X} SR:{:02X} SP:{:02X} NV-BDIZC:{:8s}", old_pc as uint, mem.get(old_pc) as uint, mem.get(old_pc+1) as uint, mem.get(old_pc+2) as uint, instruction.as_str(), operand.as_str(), cycles, self.ac as uint, self.x as uint, self.y as uint, self.sr as uint, self.sp as uint, self.sr.to_str_radix(2));
 		cycles
 	}
 }

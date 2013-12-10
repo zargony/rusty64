@@ -11,23 +11,23 @@ impl<ADDR: Int> TestMemory<ADDR> {
 
 impl<ADDR: Int> Addressable<ADDR> for TestMemory<ADDR> {
 	fn get (&self, addr: ADDR) -> u8 {
-		let i: uint = num::cast(addr);
+		let i: uint = num::cast(addr).unwrap();
 		(i & 0xff) as u8 + (i >> 8) as u8
 	}
 
 	fn set (&mut self, addr: ADDR, data: u8) {
-		let i: uint = num::cast(addr);
+		let i: uint = num::cast(addr).unwrap();
 		let expected = (i & 0xff) as u8 + (i >> 8) as u8;
 		if data != expected {
-			fail!("testmemory: Illegal data write to $%x ($%x != $%x)", i, data as uint, expected as uint);
+			fail!("testmemory: Illegal data write to ${:x} (${:x} != ${:x})", i, data as uint, expected as uint);
 		}
 	}
 }
 
 
 #[cfg(test)]
-mod tests {
-	use super::*;
+mod test {
+	use super::TestMemory;
 
 	#[test]
 	fn test_read () {

@@ -9,7 +9,7 @@ pub struct Ram<ADDR> {
 impl<ADDR: Int> Ram<ADDR> {
 	pub fn new () -> Ram<ADDR> {
 		let last_addr: ADDR = num::Bounded::max_value();
-		Ram::new_sized(1u + num::cast(last_addr))
+		Ram::new_sized(1u + num::cast(last_addr).unwrap())
 	}
 
 	pub fn new_sized (size: uint) -> Ram<ADDR> {
@@ -23,22 +23,22 @@ impl<ADDR: Int> Ram<ADDR> {
 
 impl<ADDR: Int> Addressable<ADDR> for Ram<ADDR> {
 	fn get (&self, addr: ADDR) -> u8 {
-		let i: uint = num::cast(addr);
-		if i >= self.data.len() { fail!("ram: Read beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
+		let i: uint = num::cast(addr).unwrap();
+		if i >= self.data.len() { fail!("ram: Read beyond memory bounds (${:x} >= ${:x})", i, self.data.len()); }
 		self.data[i]
 	}
 
 	fn set (&mut self, addr: ADDR, data: u8) {
-		let i: uint = num::cast(addr);
-		if i >= self.data.len() { fail!("ram: Write beyond memory bounds ($%x >= $%x)", i, self.data.len()); }
+		let i: uint = num::cast(addr).unwrap();
+		if i >= self.data.len() { fail!("ram: Write beyond memory bounds (${:x} >= ${:x})", i, self.data.len()); }
 		self.data[i] = data;
 	}
 }
 
 
 #[cfg(test)]
-mod tests {
-	use super::*;
+mod test {
+	use super::Ram;
 
 	#[test]
 	fn test_new () {
