@@ -5,7 +5,11 @@ pub trait Addressable<ADDR: Int> {
 	fn set (&mut self, addr: ADDR, data: u8);
 
 	fn getx (&self, addr:ADDR, offset: int) -> u8 {
-		self.get(addr + num::cast(offset).unwrap())
+		if offset < 0 {
+			self.get(addr - num::cast(-offset).unwrap())
+		} else {
+			self.get(addr + num::cast(offset).unwrap())
+		}
 	}
 
 	fn get_be_n (&self, addr: ADDR, nbytes: uint) -> u64 {
@@ -41,7 +45,11 @@ pub trait Addressable<ADDR: Int> {
 	}
 
 	fn setx (&mut self, addr: ADDR, offset: int, data: u8) {
-		self.set(addr + num::cast(offset).unwrap(), data);
+		if offset < 0 {
+			self.set(addr - num::cast(-offset).unwrap(), data);
+		} else {
+			self.set(addr + num::cast(offset).unwrap(), data);
+		}
 	}
 
 	fn set_be_n (&mut self, addr: ADDR, nbytes: uint, val: u64) {
@@ -100,6 +108,8 @@ mod test {
 		let data = DummyData;
 		assert_eq!(data.getx(0x0012_u16, 5), 0x17);
 		assert_eq!(data.getx(0x1234_u16, 5), 0x39);
+		assert_eq!(data.getx(0x0012_u16, -3), 0x0f);
+		assert_eq!(data.getx(0x1234_u16, -3), 0x31);
 	}
 
 	#[test]
@@ -158,6 +168,8 @@ mod test {
 		let mut data = DummyData;
 		data.setx(0x0012_u16, 5, 0x17);
 		data.setx(0x1234_u16, 5, 0x39);
+		data.setx(0x0012_u16, -3, 0x0f);
+		data.setx(0x1234_u16, -3, 0x31);
 	}
 
 	#[test]
