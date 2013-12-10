@@ -1,6 +1,6 @@
 use std::io::fs::File;
 use std::num;
-use addressable::Addressable;
+use super::addressable::Addressable;
 
 pub struct Rom<ADDR> {
 	priv data: ~[u8],
@@ -42,19 +42,19 @@ mod test {
 
 	#[test]
 	fn test_new () {
-		let memory: Rom<u16> = Rom::new(&Path::new("kernal.rom"));
+		let memory: Rom<u16> = Rom::new(&Path::new("share/c64/kernal.rom"));
 		assert_eq!(memory.size(), 8192);
 	}
 
 	#[test]
 	fn test_new_sized () {
-		let memory: Rom<u16> = Rom::new_sized(8192, &Path::new("kernal.rom"));
+		let memory: Rom<u16> = Rom::new_sized(8192, &Path::new("share/c64/kernal.rom"));
 		assert_eq!(memory.size(), 8192);
 	}
 
 	#[test]
 	fn test_read () {
-		let memory: Rom<u16> = Rom::new(&Path::new("kernal.rom"));
+		let memory: Rom<u16> = Rom::new(&Path::new("share/c64/kernal.rom"));
 		assert_eq!(memory.get(0x0123), 0x60);
 	}
 }

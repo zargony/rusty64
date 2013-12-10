@@ -2,18 +2,19 @@
 #[copyright = "Andreas Neuhaus <zargony@zargony.com>"];
 #[crate_type = "bin"];
 
-use addressable::Addressable;
-use mos65xx::Mos6510;
-use ram::Ram;
-use rom::Rom;
+use cpu::mos65xx::Mos6510;
+use mem::addressable::Addressable;
+use mem::ram::Ram;
+use mem::rom::Rom;
 
-mod addressable;
-mod mos65xx;
-mod ram;
-mod rom;
-
-#[cfg(test)]
-mod testmemory;
+pub mod cpu {
+	pub mod mos65xx;
+}
+pub mod mem {
+	pub mod addressable;
+	pub mod ram;
+	pub mod rom;
+}
 
 fn main () {
 	let mut c64 = C64::new();

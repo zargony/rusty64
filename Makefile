@@ -1,24 +1,29 @@
 RUSTC ?= rustc
 RUSTFLAGS ?= -O --cfg ndebug
 
-all: c64
+TARGETS := $(filter-out test,$(patsubst src/%.rs,%,$(wildcard src/*.rs)))
+SOURCES := $(wildcard src/**/*.rs)
 
-run: c64
-	./c64
+all: $(TARGETS)
 
-check: c64_test
-	./c64_test
+$(TARGETS): %: build/%
+
+run: build/$(firstword $(TARGETS))
+	$<
+
+check: build/test
+	$<
 
 clean:
-	rm -rf *.dSYM *~ c64 c64_test
+	rm -rf build
 
-.PHONY: all run check clean
+.PHONY: all $(TARGETS) run check clean
 
-%: %.rs *.rs
+build:
+	mkdir -p $@
+
+$(patsubst %,build/%,$(TARGETS)): build/%: src/%.rs $(SOURCES) build
 	$(RUSTC) $(RUSTFLAGS) --bin -o $@ $<
 
-lib%.dylib: %.rs *.rs
-	$(RUSTC) $(RUSTFLAGS) --lib -o $@ $<
-
-%_test: %.rs *.rs
+build/test: src/test.rs $(SOURCES) build
 	$(RUSTC) $(RUSTFLAGS) --test -o $@ $<

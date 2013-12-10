@@ -1,5 +1,5 @@
 use std::num;
-use addressable::Addressable;
+use super::addressable::Addressable;
 
 pub struct TestMemory<ADDR>;
 
