@@ -718,7 +718,7 @@ fn test_addressing_modes () {
 	Accumulator.set(&mut cpu, &mut mem, 0x99); assert_eq!(cpu.ac, 0x99);
 	// Relative
 	assert_eq!(Relative(0x33).addr(&cpu, &mem), 0x136a);
-	assert_eq!(Relative(0x99).addr(&cpu, &mem), 0x12d0);
+	assert_eq!(Relative(-0x33).addr(&cpu, &mem), 0x1304);
 	// Absolute
 	assert_eq!(Absolute(0x0123).addr(&cpu, &mem), 0x0123);
 	assert_eq!(Absolute(0x0123).get(&cpu, &mem), 0x24);
