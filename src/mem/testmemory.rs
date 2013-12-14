@@ -1,21 +1,21 @@
 use std::num;
-use super::addressable::Addressable;
+use super::addressable::{Addr, Addressable};
 
-pub struct TestMemory<ADDR>;
+pub struct TestMemory<A>;
 
-impl<ADDR: Int> TestMemory<ADDR> {
-	pub fn new () -> TestMemory<ADDR> {
+impl<A: Addr> TestMemory<A> {
+	pub fn new () -> TestMemory<A> {
 		TestMemory
 	}
 }
 
-impl<ADDR: Int> Addressable<ADDR> for TestMemory<ADDR> {
-	fn get (&self, addr: ADDR) -> u8 {
+impl<A: Addr> Addressable<A> for TestMemory<A> {
+	fn get (&self, addr: A) -> u8 {
 		let i: uint = num::cast(addr).unwrap();
 		(i & 0xff) as u8 + (i >> 8) as u8
 	}
 
-	fn set (&mut self, addr: ADDR, data: u8) {
+	fn set (&mut self, addr: A, data: u8) {
 		let i: uint = num::cast(addr).unwrap();
 		let expected = (i & 0xff) as u8 + (i >> 8) as u8;
 		if data != expected {

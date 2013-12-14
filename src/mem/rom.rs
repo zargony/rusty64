@@ -1,17 +1,17 @@
 use std::io::fs::File;
 use std::num;
-use super::addressable::Addressable;
+use super::addressable::{Addr, Addressable};
 
-pub struct Rom<ADDR> {
+pub struct Rom<A> {
 	priv data: ~[u8],
 }
 
-impl<ADDR: Int> Rom<ADDR> {
-	pub fn new (path: &Path) -> Rom<ADDR> {
+impl<A: Addr> Rom<A> {
+	pub fn new (path: &Path) -> Rom<A> {
 		Rom { data: File::open(path).read_to_end() }
 	}
 
-	pub fn new_sized (size: uint, path: &Path) -> Rom<ADDR> {
+	pub fn new_sized (size: uint, path: &Path) -> Rom<A> {
 		let rom = Rom::new(path);
 		if rom.data.len() != size { fail!("rom: ROM file size does not match expected size (${:x} != ${:x})", rom.data.len(), size); }
 		rom
@@ -22,14 +22,14 @@ impl<ADDR: Int> Rom<ADDR> {
 	}
 }
 
-impl<ADDR: Int> Addressable<ADDR> for Rom<ADDR> {
-	fn get (&self, addr: ADDR) -> u8 {
+impl<A: Addr> Addressable<A> for Rom<A> {
+	fn get (&self, addr: A) -> u8 {
 		let i: uint = num::cast(addr).unwrap();
 		if i >= self.data.len() { fail!("rom: Read beyond memory bounds (${:x} >= ${:x})", i, self.data.len()); }
 		self.data[i]
 	}
 
-	fn set (&mut self, addr: ADDR, _data: u8) {
+	fn set (&mut self, addr: A, _data: u8) {
 		let i: uint = num::cast(addr).unwrap();
 		warn!("rom: Ignoring write to read-only memory (${:x})", i);
 	}

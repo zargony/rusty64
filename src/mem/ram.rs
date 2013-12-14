@@ -1,18 +1,18 @@
 use std::num;
 use std::vec;
-use super::addressable::Addressable;
+use super::addressable::{Addr, Addressable};
 
-pub struct Ram<ADDR> {
+pub struct Ram<A> {
 	priv data: ~[u8],
 }
 
-impl<ADDR: Int> Ram<ADDR> {
-	pub fn new () -> Ram<ADDR> {
-		let last_addr: ADDR = num::Bounded::max_value();
+impl<A: Addr> Ram<A> {
+	pub fn new () -> Ram<A> {
+		let last_addr: A = num::Bounded::max_value();
 		Ram::new_sized(1u + num::cast(last_addr).unwrap())
 	}
 
-	pub fn new_sized (size: uint) -> Ram<ADDR> {
+	pub fn new_sized (size: uint) -> Ram<A> {
 		Ram { data: vec::from_elem(size, 0u8) }
 	}
 
@@ -21,14 +21,14 @@ impl<ADDR: Int> Ram<ADDR> {
 	}
 }
 
-impl<ADDR: Int> Addressable<ADDR> for Ram<ADDR> {
-	fn get (&self, addr: ADDR) -> u8 {
+impl<A: Addr> Addressable<A> for Ram<A> {
+	fn get (&self, addr: A) -> u8 {
 		let i: uint = num::cast(addr).unwrap();
 		if i >= self.data.len() { fail!("ram: Read beyond memory bounds (${:x} >= ${:x})", i, self.data.len()); }
 		self.data[i]
 	}
 
-	fn set (&mut self, addr: ADDR, data: u8) {
+	fn set (&mut self, addr: A, data: u8) {
 		let i: uint = num::cast(addr).unwrap();
 		if i >= self.data.len() { fail!("ram: Write beyond memory bounds (${:x} >= ${:x})", i, self.data.len()); }
 		self.data[i] = data;
