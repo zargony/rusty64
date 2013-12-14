@@ -3,7 +3,7 @@
 #[crate_type = "bin"];
 
 use cpu::mos65xx::Mos6510;
-use mem::addressable::Addressable;
+use mem::addr::Addressable;
 use mem::ram::Ram;
 use mem::rom::Rom;
 

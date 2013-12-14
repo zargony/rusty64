@@ -1,6 +1,6 @@
 use std::num;
 use std::vec;
-use super::addressable::{Addr, Addressable};
+use super::addr::{Addr, Addressable};
 
 pub struct Ram<A> {
 	priv data: ~[u8],

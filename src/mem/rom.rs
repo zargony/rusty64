@@ -1,6 +1,6 @@
 use std::io::fs::File;
 use std::num;
-use super::addressable::{Addr, Addressable};
+use super::addr::{Addr, Addressable};
 
 pub struct Rom<A> {
 	priv data: ~[u8],

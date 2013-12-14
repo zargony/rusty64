@@ -1,8 +1,8 @@
 use std::mem;
-use mem::addressable::Addressable;
+use mem::addr::Addressable;
 
 #[cfg(test)]
-use mem::testmemory::TestMemory;
+use mem::test::TestMemory;
 
 
 enum Operand {
