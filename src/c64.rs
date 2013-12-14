@@ -1,6 +1,6 @@
 #[desc = "C64 emulator"];
-#[copyright = "Andreas Neuhaus <zargony@zargony.com>"];
-#[crate_type = "bin"];
+#[copyright = "Andreas Neuhaus <info@zargony.com>"];
+#[license = "MIT"];
 
 use cpu::mos65xx::Mos6510;
 use mem::{Addressable, Ram, Rom};
