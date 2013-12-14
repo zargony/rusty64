@@ -1,12 +1,19 @@
 use std::num;
 
+/// A trait for all addresses
 pub trait Addr: Int { }
 
+/// Supported address sizes
 impl Addr for u8 { }
 impl Addr for u16 { }
 impl Addr for u32 { }
 impl Addr for u64 { }
+// TODO: Shall we support arbitrary address sizes like u12?
 
+/// A trait for anything that has an address bus and can get/set data. The
+/// data size that can be get/set is u8 always, the address size is given
+/// as a type parameter and can be of any size (typically u16 or u32).
+/// TODO: Support data sizes other than u8?
 pub trait Addressable<A: Addr> {
 	fn get (&self, addr: A) -> u8;
 	fn set (&mut self, addr: A, data: u8);
