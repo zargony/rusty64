@@ -1,7 +1,7 @@
-use std::{num, vec};
+use std::{fmt, num, vec};
 
 /// A trait for all addresses
-pub trait Addr: Int + Unsigned {
+pub trait Addr: Int + Unsigned + fmt::UpperHex {
 	/// Calculate new address with given offset from given address
 	fn offset<T: Integer+Signed+NumCast> (&self, offset: T) -> Self {
 		if offset.is_negative() {
@@ -12,12 +12,12 @@ pub trait Addr: Int + Unsigned {
 	}
 }
 
-/// Supported address sizes
+// Supported address sizes
+// TODO: Shall we support arbitrary address sizes like u12?
 impl Addr for u8 { }
 impl Addr for u16 { }
 impl Addr for u32 { }
 impl Addr for u64 { }
-// TODO: Shall we support arbitrary address sizes like u12?
 
 /// Create a number from the given byte iterator in big endian order
 /// FIXME: This should actually take an Iterator<&'a u8>

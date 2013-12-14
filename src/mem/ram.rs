@@ -1,21 +1,25 @@
-use std::num;
-use std::vec;
+use std::{num, vec};
 use super::addr::{Addr, Addressable};
 
+/// Generic read/write memory (RAM)
 pub struct Ram<A> {
 	priv data: ~[u8],
+	priv last_addr: A,
 }
 
 impl<A: Addr> Ram<A> {
+	/// Create new RAM with full capacity of its address range
 	pub fn new () -> Ram<A> {
-		let last_addr: A = num::Bounded::max_value();
-		Ram::new_sized(1u + num::cast(last_addr).unwrap())
+		Ram::with_capacity(num::Bounded::max_value())
 	}
 
-	pub fn new_sized (size: uint) -> Ram<A> {
-		Ram { data: vec::from_elem(size, 0u8) }
+	/// Create new RAM which will be addressable from 0 to the given address
+	pub fn with_capacity (last_addr: A) -> Ram<A> {
+		let size: uint = 1 + num::cast(last_addr.clone()).unwrap();
+		Ram { data: vec::from_elem(size, 0u8), last_addr: last_addr }
 	}
 
+	/// Returns the size of the RAM
 	pub fn size (&self) -> uint {
 		self.data.len()
 	}
@@ -23,14 +27,14 @@ impl<A: Addr> Ram<A> {
 
 impl<A: Addr> Addressable<A> for Ram<A> {
 	fn get (&self, addr: A) -> u8 {
-		let i: uint = num::cast(addr).unwrap();
-		if i >= self.data.len() { fail!("ram: Read beyond memory bounds (${:x} >= ${:x})", i, self.data.len()); }
+		if addr > self.last_addr { fail!("ram: Read beyond memory bounds (${:X} > ${:X})", addr, self.last_addr); }
+		let i: u64 = num::cast(addr).unwrap();
 		self.data[i]
 	}
 
 	fn set (&mut self, addr: A, data: u8) {
-		let i: uint = num::cast(addr).unwrap();
-		if i >= self.data.len() { fail!("ram: Write beyond memory bounds (${:x} >= ${:x})", i, self.data.len()); }
+		if addr >= self.last_addr { fail!("ram: Write beyond memory bounds (${:X} > ${:X})", addr, self.last_addr); }
+		let i: u64 = num::cast(addr).unwrap();
 		self.data[i] = data;
 	}
 }
@@ -47,14 +51,14 @@ mod test {
 	}
 
 	#[test]
-	fn test_new_sized () {
-		let memory: Ram<u16> = Ram::new_sized(1024);
+	fn test_with_capacity () {
+		let memory: Ram<u16> = Ram::with_capacity(0x03ff_u16);
 		assert_eq!(memory.size(), 1024);
 	}
 
 	#[test]
 	fn test_read_write () {
-		let mut memory: Ram<u16> = Ram::new_sized(1024);
+		let mut memory: Ram<u16> = Ram::with_capacity(0x03ff_u16);
 		memory.set(0x0123, 0x55);
 		assert_eq!(memory.get(0x0123), 0x55);
 	}
