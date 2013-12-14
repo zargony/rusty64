@@ -1,6 +1,6 @@
 use std::{num, os};
 use std::io::fs::File;
-use super::addr::{Addr, Addressable};
+use super::{Addr, Addressable};
 
 /// Generic read-only memory (ROM)
 pub struct Rom<A> {

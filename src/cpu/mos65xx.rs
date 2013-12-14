@@ -1,5 +1,5 @@
 use std::mem;
-use mem::addr::Addressable;
+use mem::Addressable;
 
 #[cfg(test)]
 use mem::test::TestMemory;

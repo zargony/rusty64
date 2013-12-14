@@ -1,5 +1,5 @@
 use std::{num, vec};
-use super::addr::{Addr, Addressable};
+use super::{Addr, Addressable};
 
 /// Generic read/write memory (RAM)
 pub struct Ram<A> {

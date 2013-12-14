@@ -3,18 +3,12 @@
 #[crate_type = "bin"];
 
 use cpu::mos65xx::Mos6510;
-use mem::addr::Addressable;
-use mem::ram::Ram;
-use mem::rom::Rom;
+use mem::{Addressable, Ram, Rom};
 
 pub mod cpu {
 	pub mod mos65xx;
 }
-pub mod mem {
-	pub mod addressable;
-	pub mod ram;
-	pub mod rom;
-}
+pub mod mem;
 
 fn main () {
 	let mut c64 = C64::new();

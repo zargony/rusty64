@@ -1,5 +1,5 @@
 use std::num;
-use super::addr::{Addr, Addressable};
+use super::{Addr, Addressable};
 
 /// For every address, TestMemory has fixed calculated data contents. When
 /// reading, the memory returns this fixed data. When writing, the memory
