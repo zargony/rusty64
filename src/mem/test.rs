@@ -31,7 +31,7 @@ impl<A: Addr> Addressable<A> for TestMemory<A> {
 	fn set (&mut self, addr: A, data: u8) {
 		let expected = data_for_addr(addr.clone());
 		if data != expected {
-			fail!("testmemory: Illegal data write to ${:X} ({:X} != {:X})", addr, data, expected);
+			fail!("testmemory: Illegal data write to ${:X} (${:X} != ${:X})", addr, data, expected);
 		}
 	}
 }
