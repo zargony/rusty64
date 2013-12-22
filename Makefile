@@ -18,15 +18,14 @@ clean:
 
 .PHONY: all $(TARGETS) run check clean
 
-build:
-	mkdir -p $@
-
-$(patsubst %,build/%,$(TARGETS)): build/%: src/%.rs build
+$(patsubst %,build/%,$(TARGETS)): build/%: src/%.rs
+	mkdir -p build
 	$(RUSTC) $(RUSTFLAGS) --dep-info --bin -o $@ $<
 
 -include $(patsubst %,build/%.d,$(TARGETS))
 
-build/test: src/test.rs build
+build/test: src/test.rs
+	mkdir -p build
 	$(RUSTC) $(RUSTFLAGS) --dep-info --test -o $@ $<
 
 -include build/test.d
