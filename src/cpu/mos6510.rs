@@ -15,12 +15,22 @@ impl Mos6510 {
 		// TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
 		Mos6510 { cpu: Mos6502::new(), port_ddr: 0, port_dat: 0 }
 	}
+
+	/// Interrupt the CPU (NMI)
+	pub fn nmi (&mut self) {
+		self.cpu.nmi();
+	}
+
+	/// Interrupt the CPU (IRQ)
+	pub fn irq (&mut self) {
+		self.cpu.irq();
+	}
 }
 
 impl CPU<u16> for Mos6510 {
 	/// Reset the CPU
-	fn reset<M: Addressable<u16>> (&mut self, mem: &M) {
-		self.cpu.reset(mem);
+	fn reset (&mut self) {
+		self.cpu.reset();
 	}
 
 	/// Do one step (execute the next instruction). Returns the number of

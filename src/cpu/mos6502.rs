@@ -22,6 +22,9 @@ pub struct Mos6502 {
 	priv y: u8,							// Y register
 	priv sr: u8,						// Status Register (NV-BDIZC: Negative, oVerflow, 1, Break, Decimal, Interrupt, Zero, Carry)
 	priv sp: u8,						// Stack Pointer
+	priv reset: bool,					// RESET line
+	priv nmi: bool,						// NMI line
+	priv irq: bool,						// IRQ line
 }
 
 /// The MOS6502 status flags
@@ -38,7 +41,7 @@ pub enum StatusFlag {
 impl Mos6502 {
 	/// Create a new MOS6502 processor
 	pub fn new () -> Mos6502 {
-		Mos6502 { pc: 0, ac: 0, x: 0, y: 0, sr: 0, sp: 0 }
+		Mos6502 { pc: 0, ac: 0, x: 0, y: 0, sr: 0x20, sp: 0, reset: true, nmi: false, irq: false }
 	}
 
 	/// Get the memory contents at the current PC and advance the PC
@@ -85,22 +88,76 @@ impl Mos6502 {
 		self.sp += Primitive::bytes(None::<T>) as u8;
 		value
 	}
+
+	/// Interrupt the CPU (NMI)
+	pub fn nmi (&mut self) {
+		// Trigger the NMI line. The actual NMI processing is done in the next step().
+		self.nmi = true;
+	}
+
+	/// Interrupt the CPU (IRQ)
+	pub fn irq (&mut self) {
+		// Trigger the IRQ line. The actual IRQ processing is done in the next step().
+		self.irq = true;
+	}
 }
 
 impl CPU<u16> for Mos6502 {
 	/// Reset the CPU
-	fn reset<M: Addressable<u16>> (&mut self, mem: &M) {
-		// On reset, the interrupt-disable flag is set (and the decimal flag is cleared in the CMOS version 65c02).
-		// The other bits and all registers (including the stack pointer are unspecified and might contain random values.
-		// Execution begins at the address pointed to by the reset vector at address $FFFC.
-		self.pc = mem.get_le(RESET_VECTOR);
-		self.sr = 0x24;
-		debug!("mos65xx: Reset! Start at (${:04X}) -> ${:04X}", RESET_VECTOR, self.pc);
+	fn reset (&mut self) {
+		// Trigger the RESET line. The actual RESET processing is done in the next step().
+		self.reset = true;
 	}
 
 	/// Do one step (execute the next instruction). Returns the number of
 	/// cycles the instruction needed
 	fn step<M: Addressable<u16>> (&mut self, mem: &mut M) -> uint {
+		// Process RESET if line was triggered
+		if self.reset {
+			// A RESET jumps to the vector at RESET_VECTOR and sets the InterruptDisableFlag.
+			// Note that all other states and registers are unspecified and might contain
+			// random values, so they need to be initialized by the reset routine.
+			// See also http://6502.org/tutorials/interrupts.html
+			self.set_flag(InterruptDisableFlag, true);
+			self.pc = mem.get_le(RESET_VECTOR);
+			self.reset = false;
+			self.nmi = false;
+			self.irq = false;
+			debug!("mos6502: RESET - Jumping to (${:04X}) -> ${:04X}", RESET_VECTOR, self.pc);
+			return 6;
+		}
+		// Process NMI if line was triggered
+		if self.nmi {
+			// An NMI pushes PC and SR to the stack and jumps to the vector at NMI_VECTOR.
+			// It does NOT set the InterruptDisableFlag.
+			// See also http://6502.org/tutorials/interrupts.html
+			self.push(mem, self.pc);
+			self.push(mem, self.sr);
+			self.pc = mem.get_le(NMI_VECTOR);
+			self.nmi = false;
+			debug!("mos6502: NMI - Jumping to (${:04X}) -> ${:04X}", NMI_VECTOR, self.pc);
+			return 7;
+		}
+		// Process IRQ if line was triggered and interrupts are enabled
+		if self.irq && !self.get_flag(InterruptDisableFlag) {
+			// An IRQ pushes PC and SR to the stack, jumps to the vector at IRQ_VECTOR and
+			// sets the InterruptDisableFlag.
+			// The BRK instruction does the same, but sets BreakFlag (before pushing SR).
+			// See also http://6502.org/tutorials/interrupts.html
+			self.set_flag(BreakFlag, false);
+			self.push(mem, self.pc);
+			self.push(mem, self.sr);
+			self.set_flag(InterruptDisableFlag, true);
+			self.pc = mem.get_le(IRQ_VECTOR);
+			// FIXME: The real 6502 IRQ line is level-sensitive, not edge-sensitive!
+			// FIXME: I.e. it does not stop jumping to the IRQ_VECTOR after one run,
+			// FIXME: but after the hardware drops the IRQ line (which the interrupt
+			// FIXME: code usually causes, but not necessary needs to cause).
+			self.irq = false;
+			debug!("mos6502: IRQ - Jumping to (${:04X}) -> ${:04X}", IRQ_VECTOR, self.pc);
+			return 7;
+		}
+
 		// TODO...
 		0
 	}
@@ -128,8 +185,9 @@ mod test {
 	#[test]
 	fn state_after_reset () {
 		let mut cpu = Mos6502::new();
-		let mem = TestMemory;
-		cpu.reset(&mem);
+		let mut mem = TestMemory;
+		cpu.reset();
+		cpu.step(&mut mem);
 		assert_eq!(cpu.pc, 0xfdfc);
 		assert_eq!(cpu.sr, 0x24);
 	}
