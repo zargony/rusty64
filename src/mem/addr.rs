@@ -2,13 +2,18 @@ use std::{fmt, num, vec};
 
 /// A trait for all addresses
 pub trait Addr: Int + Unsigned + fmt::UpperHex {
-	/// Calculate new address with given offset from given address
+	/// Calculate new address with given offset
 	fn offset<T: Integer+Signed+NumCast> (&self, offset: T) -> Self {
 		if offset.is_negative() {
 			self - num::cast(offset.abs()).unwrap()
 		} else {
 			self + num::cast(offset).unwrap()
 		}
+	}
+
+	/// Calculate new address with given offset only changing the masked part of the address
+	fn offset_masked<T: Integer+Signed+Bitwise+NumCast> (&self, offset: T, mask: Self) -> Self {
+		(self & !mask) | (self.offset(offset) & mask)
 	}
 }
 
@@ -120,6 +125,14 @@ mod test {
 		assert_eq!(0x1234_u16.offset(-3), 0x1231_u16);
 		assert_eq!(0xffff_u16.offset( 1), 0x0000_u16);
 		assert_eq!(0x0000_u16.offset(-1), 0xffff_u16);
+	}
+
+	#[test]
+	fn address_offset_masked () {
+		assert_eq!(0x12ff_u16.offset_masked( 1, 0xffff), 0x1300_u16);
+		assert_eq!(0x12ff_u16.offset_masked( 1, 0x00ff), 0x1200_u16);
+		assert_eq!(0x1300_u16.offset_masked(-1, 0xffff), 0x12ff_u16);
+		assert_eq!(0x1300_u16.offset_masked(-1, 0x00ff), 0x13ff_u16);
 	}
 
 	#[test]
