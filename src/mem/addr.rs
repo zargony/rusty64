@@ -68,36 +68,26 @@ pub trait Addressable<A: Addr> {
 	/// Memory read: returns the data at the given address
 	fn get (&self, addr: A) -> u8;
 
-	/// Returns the data at the given address with given offset
-	fn getx (&self, addr: A, ofs: int) -> u8 {
-		self.get(addr.offset(ofs))
-	}
-
 	/// Get a number in big endian format from the given address
 	fn get_be<T: Primitive> (&self, addr: A) -> T {
-		let data = vec::from_fn(Primitive::bytes(None::<T>), |i| self.getx(addr.clone(), i as int));
+		let data = vec::from_fn(Primitive::bytes(None::<T>), |i| self.get(addr.offset(i as int)));
 		number_from_be_bytes(data)
 	}
 
 	/// Get a number in little endian format from the given address
 	fn get_le<T: Primitive> (&self, addr: A) -> T {
-		let data = vec::from_fn(Primitive::bytes(None::<T>), |i| self.getx(addr.clone(), i as int));
+		let data = vec::from_fn(Primitive::bytes(None::<T>), |i| self.get(addr.offset(i as int)));
 		number_from_le_bytes(data)
 	}
 
 	/// Memory write: set the data at the given address
 	fn set (&mut self, addr: A, data: u8);
 
-	/// Set the data at the given address with given offset
-	fn setx (&mut self, addr: A, ofs: int, data: u8) {
-		self.set(addr.offset(ofs), data);
-	}
-
 	/// Store a number in big endian format to the given address
 	fn set_be<T: Primitive> (&mut self, addr: A, val: T) {
 		number_to_be_bytes(val, |data| {
 			for (i, &b) in data.iter().enumerate() {
-				self.setx(addr.clone(), i as int, b);
+				self.set(addr.offset(i as int), b);
 			}
 		});
 	}
@@ -106,7 +96,7 @@ pub trait Addressable<A: Addr> {
 	fn set_le<T: Primitive> (&mut self, addr: A, val: T) {
 		number_to_le_bytes(val, |data| {
 			for (i, &b) in data.iter().enumerate() {
-				self.setx(addr.clone(), i as int, b);
+				self.set(addr.offset(i as int), b);
 			}
 		});
 	}
@@ -205,15 +195,6 @@ mod test {
 	}
 
 	#[test]
-	fn get_byte_with_offset () {
-		let data = DummyData;
-		assert_eq!(data.getx(0x1234_u16,  5), 0x39);
-		assert_eq!(data.getx(0x1234_u16, -3), 0x31);
-		assert_eq!(data.getx(0xffff_u16,  1), 0x00);
-		assert_eq!(data.getx(0x0000_u16, -1), 0xff);
-	}
-
-	#[test]
 	fn get_big_endian_number () {
 		let data = DummyData;
 		assert_eq!(      0x02_u8 , data.get_be(0x0002_u16));
@@ -262,15 +243,6 @@ mod test {
 		let mut data = DummyData;
 		data.set(0x0012_u16, 0x12);
 		data.set(0x1234_u16, 0x34);
-	}
-
-	#[test]
-	fn set_byte_with_offset () {
-		let mut data = DummyData;
-		data.setx(0x1234_u16,  5, 0x39);
-		data.setx(0x1234_u16, -3, 0x31);
-		data.setx(0xffff_u16,  1, 0x00);
-		data.setx(0x0000_u16, -1, 0xff);
 	}
 
 	#[test]
