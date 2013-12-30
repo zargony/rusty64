@@ -23,8 +23,8 @@ impl Addr for u64 { }
 /// FIXME: This should actually take an Iterator<&'a u8>
 fn number_from_bytes<I: Iterator<u8>, T: Primitive> (mut it: I) -> T {
 	let val = it.fold(0u64, |v, b| (v << 8) + b as u64);
-	if num::Primitive::is_signed(None::<T>) {
-		let shift = 64 - num::Primitive::bits(None::<T>);
+	if Primitive::is_signed(None::<T>) {
+		let shift = 64 - Primitive::bits(None::<T>);
 		num::cast((val << shift) as i64 >> shift).unwrap()
 	} else {
 		num::cast(val).unwrap()
@@ -43,14 +43,14 @@ fn number_from_le_bytes<T: Primitive> (data: &[u8]) -> T {
 
 /// Convert a given number to bytes in big endian order
 fn number_to_be_bytes<T: Primitive, U> (val: T, f: |&[u8]| -> U) -> U {
-	let size = num::Primitive::bytes(None::<T>);
+	let size = Primitive::bytes(None::<T>);
 	let ptr = &val as *T as *u8;
 	f(vec::from_fn(size, |i| unsafe { *ptr.offset((size - i - 1) as int) }))
 }
 
 /// Convert a given number to bytes in little endian order
 fn number_to_le_bytes<T: Primitive, U> (val: T, f: |&[u8]| -> U) -> U {
-	let size = num::Primitive::bytes(None::<T>);
+	let size = Primitive::bytes(None::<T>);
 	let ptr = &val as *T as *u8;
 	unsafe { vec::raw::buf_as_slice(ptr, size, f) }
 }
@@ -70,13 +70,13 @@ pub trait Addressable<A: Addr> {
 
 	/// Get a number in big endian format from the given address
 	fn get_be<T: Primitive> (&self, addr: A) -> T {
-		let data = vec::from_fn(num::Primitive::bytes(None::<T>), |i| self.getx(addr.clone(), i as int));
+		let data = vec::from_fn(Primitive::bytes(None::<T>), |i| self.getx(addr.clone(), i as int));
 		number_from_be_bytes(data)
 	}
 
 	/// Get a number in little endian format from the given address
 	fn get_le<T: Primitive> (&self, addr: A) -> T {
-		let data = vec::from_fn(num::Primitive::bytes(None::<T>), |i| self.getx(addr.clone(), i as int));
+		let data = vec::from_fn(Primitive::bytes(None::<T>), |i| self.getx(addr.clone(), i as int));
 		number_from_le_bytes(data)
 	}
 
