@@ -129,12 +129,6 @@ mod test {
 		assert!(cpu.get_flag(ZeroFlag));
 		assert!(!cpu.get_flag(OverflowFlag));
 		assert!(cpu.get_flag(NegativeFlag));
-	}
-
-	#[test]
-	fn set_status_flag () {
-		let mut cpu = Mos6502::new();
-		cpu.sr = 0xaa;
 		cpu.set_flag(CarryFlag, true);
 		cpu.set_flag(ZeroFlag, false);
 		cpu.set_flag(OverflowFlag, true);
@@ -146,10 +140,13 @@ mod test {
 	fn zero_and_negative_values () {
 		let mut cpu = Mos6502::new();
 		cpu.set_zn(0);
-		assert!(cpu.get_flag(ZeroFlag)); assert!(!cpu.get_flag(NegativeFlag));
+		assert!(cpu.get_flag(ZeroFlag));
+		assert!(!cpu.get_flag(NegativeFlag));
 		cpu.set_zn(42);
-		assert!(!cpu.get_flag(ZeroFlag)); assert!(!cpu.get_flag(NegativeFlag));
+		assert!(!cpu.get_flag(ZeroFlag));
+		assert!(!cpu.get_flag(NegativeFlag));
 		cpu.set_zn(142);
-		assert!(!cpu.get_flag(ZeroFlag)); assert!(cpu.get_flag(NegativeFlag));
+		assert!(!cpu.get_flag(ZeroFlag));
+		assert!(cpu.get_flag(NegativeFlag));
 	}
 }
