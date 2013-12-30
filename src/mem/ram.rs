@@ -33,7 +33,7 @@ impl<A: Addr> Addressable<A> for Ram<A> {
 	}
 
 	fn set (&mut self, addr: A, data: u8) {
-		if addr >= self.last_addr { fail!("ram: Write beyond memory bounds (${:X} > ${:X})", addr, self.last_addr); }
+		if addr > self.last_addr { fail!("ram: Write beyond memory bounds (${:X} > ${:X})", addr, self.last_addr); }
 		let i: u64 = num::cast(addr).unwrap();
 		self.data[i] = data;
 	}
