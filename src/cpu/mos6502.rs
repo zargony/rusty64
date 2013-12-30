@@ -24,6 +24,17 @@ pub struct Mos6502 {
 	priv sp: u8,						// Stack Pointer
 }
 
+/// The MOS6502 status flags
+pub enum StatusFlag {
+	CarryFlag				= 0,
+	ZeroFlag				= 1,
+	InterruptDisableFlag	= 2,
+	DecimalFlag				= 3,
+	BreakFlag				= 4,
+	OverflowFlag			= 6,
+	NegativeFlag			= 7,
+}
+
 impl Mos6502 {
 	/// Create a new MOS6502 processor
 	pub fn new () -> Mos6502 {
@@ -35,6 +46,27 @@ impl Mos6502 {
 		let val = mem.get_le(self.pc);
 		self.pc += Primitive::bytes(None::<T>) as u16;
 		val
+	}
+
+	/// Get the given status flag
+	fn get_flag (&self, flag: StatusFlag) -> bool {
+		(self.sr & (1 << flag as u8)) != 0
+	}
+
+	/// Set the given status flag to the given state
+	fn set_flag (&mut self, flag: StatusFlag, state: bool) {
+		if state {
+			self.sr |= (1 << flag as u8);
+		} else {
+			self.sr &= !(1 << flag as u8);
+		}
+	}
+
+	/// Set ZeroFlag and NegativeFlag based on the given value
+	fn set_zn (&mut self, value: u8) -> u8 {
+		self.set_flag(ZeroFlag, value == 0);
+		self.set_flag(NegativeFlag, (value as i8) < 0);
+		value
 	}
 }
 
@@ -62,6 +94,7 @@ impl CPU<u16> for Mos6502 {
 mod test {
 	use mem::test::TestMemory;
 	use super::Mos6502;
+	use super::{CarryFlag, ZeroFlag, OverflowFlag, NegativeFlag};
 
 	#[test]
 	fn initial_state () {
@@ -86,5 +119,37 @@ mod test {
 		let val: u8 = cpu.next(&mem); assert_eq!(val, 0x01);
 		let val: u16 = cpu.next(&mem); assert_eq!(val, 0x0302);
 		let val: u16 = cpu.next(&mem); assert_eq!(val, 0x0504);
+	}
+
+	#[test]
+	fn status_flags () {
+		let mut cpu = Mos6502::new();
+		cpu.sr = 0xaa;
+		assert!(!cpu.get_flag(CarryFlag));
+		assert!(cpu.get_flag(ZeroFlag));
+		assert!(!cpu.get_flag(OverflowFlag));
+		assert!(cpu.get_flag(NegativeFlag));
+	}
+
+	#[test]
+	fn set_status_flag () {
+		let mut cpu = Mos6502::new();
+		cpu.sr = 0xaa;
+		cpu.set_flag(CarryFlag, true);
+		cpu.set_flag(ZeroFlag, false);
+		cpu.set_flag(OverflowFlag, true);
+		cpu.set_flag(NegativeFlag, false);
+		assert_eq!(cpu.sr, 0x69);
+	}
+
+	#[test]
+	fn zero_and_negative_values () {
+		let mut cpu = Mos6502::new();
+		cpu.set_zn(0);
+		assert!(cpu.get_flag(ZeroFlag)); assert!(!cpu.get_flag(NegativeFlag));
+		cpu.set_zn(42);
+		assert!(!cpu.get_flag(ZeroFlag)); assert!(!cpu.get_flag(NegativeFlag));
+		cpu.set_zn(142);
+		assert!(!cpu.get_flag(ZeroFlag)); assert!(cpu.get_flag(NegativeFlag));
 	}
 }
