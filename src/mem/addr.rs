@@ -115,7 +115,7 @@ mod test {
 	use super::{Addr, Addressable};
 
 	#[test]
-	fn test_offset () {
+	fn address_offset () {
 		assert_eq!(0x1234_u16.offset( 5), 0x1239_u16);
 		assert_eq!(0x1234_u16.offset(-3), 0x1231_u16);
 		assert_eq!(0xffff_u16.offset( 1), 0x0000_u16);
@@ -123,7 +123,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_number_from_be_bytes () {
+	fn convert_from_big_endian () {
 		assert_eq!(       0x12_u8 , number_from_be_bytes(&[0x12]));
 		assert_eq!(       0x98_u8 , number_from_be_bytes(&[0x98]));
 		assert_eq!( 0x12345678_u32, number_from_be_bytes(&[0x12, 0x34, 0x56, 0x78]));
@@ -137,7 +137,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_number_from_le_bytes () {
+	fn convert_from_little_endian () {
 		assert_eq!(       0x12_u8 , number_from_le_bytes(&[0x12]));
 		assert_eq!(       0x98_u8 , number_from_le_bytes(&[0x98]));
 		assert_eq!( 0x12345678_u32, number_from_le_bytes(&[0x78, 0x56, 0x34, 0x12]));
@@ -151,7 +151,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_number_to_be_bytes () {
+	fn convert_to_big_endian () {
 		number_to_be_bytes(       0x12_u8 , |data| assert_eq!(data, [0x12]));
 		number_to_be_bytes(       0x98_u8 , |data| assert_eq!(data, [0x98]));
 		number_to_be_bytes( 0x12345678_u32, |data| assert_eq!(data, [0x12, 0x34, 0x56, 0x78]));
@@ -165,7 +165,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_number_to_le_bytes () {
+	fn convert_to_little_endian () {
 		number_to_le_bytes(       0x12_u8 , |data| assert_eq!(data, [0x12]));
 		number_to_le_bytes(       0x98_u8 , |data| assert_eq!(data, [0x98]));
 		number_to_le_bytes( 0x12345678_u32, |data| assert_eq!(data, [0x78, 0x56, 0x34, 0x12]));
@@ -189,14 +189,14 @@ mod test {
 	}
 
 	#[test]
-	fn test_get () {
+	fn get_byte () {
 		let data = DummyData;
 		assert_eq!(data.get(0x0012_u16), 0x12);
 		assert_eq!(data.get(0x1234_u16), 0x34);
 	}
 
 	#[test]
-	fn test_getx () {
+	fn get_byte_with_offset () {
 		let data = DummyData;
 		assert_eq!(data.getx(0x1234_u16,  5), 0x39);
 		assert_eq!(data.getx(0x1234_u16, -3), 0x31);
@@ -205,7 +205,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_get_big_endian () {
+	fn get_big_endian_number () {
 		let data = DummyData;
 		assert_eq!(      0x02_u8 , data.get_be(0x0002_u16));
 		assert_eq!(      0x54_u8 , data.get_be(0x0054_u16));
@@ -216,7 +216,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_get_big_endian_signed () {
+	fn get_signed_big_endian_number () {
 		let data = DummyData;
 		assert_eq!(       0x54_i8 , data.get_be(0x0054_u16));
 		assert_eq!(      -0x5b_i8 , data.get_be(0x00a5_u16));
@@ -227,7 +227,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_get_little_endian () {
+	fn get_little_endian_number () {
 		let data = DummyData;
 		assert_eq!(      0x02_u8 , data.get_le(0x0002_u16));
 		assert_eq!(      0x54_u8 , data.get_le(0x0054_u16));
@@ -238,7 +238,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_get_little_endian_signed () {
+	fn get_signed_little_endian_number () {
 		let data = DummyData;
 		assert_eq!(       0x54_i8 , data.get_le(0x0054_u16));
 		assert_eq!(      -0x5b_i8 , data.get_le(0x00a5_u16));
@@ -249,14 +249,14 @@ mod test {
 	}
 
 	#[test]
-	fn test_set () {
+	fn set_byte () {
 		let mut data = DummyData;
 		data.set(0x0012_u16, 0x12);
 		data.set(0x1234_u16, 0x34);
 	}
 
 	#[test]
-	fn test_setx () {
+	fn set_byte_with_offset () {
 		let mut data = DummyData;
 		data.setx(0x1234_u16,  5, 0x39);
 		data.setx(0x1234_u16, -3, 0x31);
@@ -265,7 +265,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_set_big_endian () {
+	fn set_big_endian_number () {
 		let mut data = DummyData;
 		data.set_be(0x0002_u16,       0x02_u8 );
 		data.set_be(0x0054_u16,       0x54_u8 );
@@ -276,7 +276,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_set_big_endian_signed () {
+	fn set_signed_big_endian_number () {
 		let mut data = DummyData;
 		data.set_be(0x0054_u16,        0x54_i8 );
 		data.set_be(0x00a5_u16,       -0x5b_i8 );
@@ -287,7 +287,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_set_little_endian () {
+	fn set_little_endian_number () {
 		let mut data = DummyData;
 		data.set_le(0x0002_u16,       0x02_u8 );
 		data.set_le(0x0054_u16,       0x54_u8 );
@@ -298,7 +298,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_set_little_endian_signed () {
+	fn set_signed_little_endian_number () {
 		let mut data = DummyData;
 		data.set_le(0x0054_u16,        0x54_i8 );
 		data.set_le(0x00a5_u16,       -0x5b_i8 );

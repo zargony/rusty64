@@ -42,7 +42,7 @@ mod test {
 	use super::TestMemory;
 
 	#[test]
-	fn test_read () {
+	fn read () {
 		let memory: TestMemory<u16> = TestMemory::new();
 		assert_eq!(memory.get(0x0012), 0x12);
 		assert_eq!(memory.get(0x0123), 0x24);
@@ -50,7 +50,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_write () {
+	fn write () {
 		let mut memory: TestMemory<u16> = TestMemory::new();
 		memory.set(0x0012, 0x12);
 		memory.set(0x0123, 0x24);

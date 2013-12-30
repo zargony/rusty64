@@ -45,19 +45,19 @@ mod test {
 	use super::Ram;
 
 	#[test]
-	fn test_new () {
+	fn create_with_full_addressable_capacity () {
 		let memory: Ram<u8> = Ram::new();
 		assert_eq!(memory.size(), 256);
 	}
 
 	#[test]
-	fn test_with_capacity () {
+	fn create_with_requested_capacity () {
 		let memory: Ram<u16> = Ram::with_capacity(0x03ff_u16);
 		assert_eq!(memory.size(), 1024);
 	}
 
 	#[test]
-	fn test_read_write () {
+	fn read_write () {
 		let mut memory: Ram<u16> = Ram::with_capacity(0x03ff_u16);
 		memory.set(0x0123, 0x55);
 		assert_eq!(memory.get(0x0123), 0x55);

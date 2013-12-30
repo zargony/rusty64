@@ -42,14 +42,21 @@ mod test {
 	use super::Rom;
 
 	#[test]
-	fn test_new () {
+	fn create_with_file_contents () {
 		let memory: Rom<u16> = Rom::new(&Path::new("c64/kernal.rom"));
 		assert_eq!(memory.size(), 8192);
 	}
 
 	#[test]
-	fn test_read () {
+	fn read () {
 		let memory: Rom<u16> = Rom::new(&Path::new("c64/kernal.rom"));
 		assert_eq!(memory.get(0x0123), 0x60);
+	}
+
+	#[test]
+	fn write_does_nothing () {
+		let mut memory: Rom<u16> = Rom::new(&Path::new("c64/kernal.rom"));
+		memory.set(0x123, 0x55);
+		assert!(memory.get(0x0123) != 0x55);
 	}
 }
