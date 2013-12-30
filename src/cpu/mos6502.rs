@@ -68,6 +68,23 @@ impl Mos6502 {
 		self.set_flag(NegativeFlag, (value as i8) < 0);
 		value
 	}
+
+	/// Push a value onto the stack
+	fn push<M: Addressable<u16>, T: Primitive> (&mut self, mem: &mut M, value: T) {
+		// SP points to the next free stack position as $0100+SP. SP needs to be
+		// initialized to #$FF by the reset code. As the stack grows, SP decreases
+		// down to #$00 (i.e. stack full). Stack access never leaves the stack page!
+		self.sp -= Primitive::bytes(None::<T>) as u8;
+		mem.set_le_masked(0x0100 + (self.sp + 1) as u16, 0x00ff, value);
+	}
+
+	/// Pop a value from the stack
+	fn pop<M: Addressable<u16>, T: Primitive> (&mut self, mem: &M) -> T {
+		// See push() for details
+		let value: T = mem.get_le_masked(0x0100 + (self.sp + 1) as u16, 0x00ff);
+		self.sp += Primitive::bytes(None::<T>) as u8;
+		value
+	}
 }
 
 impl CPU<u16> for Mos6502 {
@@ -155,5 +172,55 @@ mod test {
 		cpu.set_zn(142);
 		assert!(!cpu.get_flag(ZeroFlag));
 		assert!(cpu.get_flag(NegativeFlag));
+	}
+
+	#[test]
+	fn stack_push_pop () {
+		let mut cpu = Mos6502::new();
+		let mut mem: Ram<u16> = Ram::with_capacity(0x01ff_u16);
+		cpu.sp = 0xff;
+		assert_eq!(mem.get(0x01ff), 0x00);
+		cpu.push(&mut mem, 0x12_u8);
+		assert_eq!(cpu.sp, 0xfe);
+		assert_eq!(mem.get(0x01ff), 0x12);
+		assert_eq!(mem.get(0x01fe), 0x00);
+		cpu.push(&mut mem, 0x3456_u16);
+		assert_eq!(cpu.sp, 0xfc);
+		assert_eq!(mem.get(0x01fe), 0x34);
+		assert_eq!(mem.get(0x01fd), 0x56);
+		assert_eq!(mem.get(0x01fc), 0x00);
+		let val: u8 = cpu.pop(&mem);
+		assert_eq!(val, 0x56);
+		assert_eq!(cpu.sp, 0xfd);
+		let val: u16 = cpu.pop(&mem);
+		assert_eq!(val, 0x1234);
+		assert_eq!(cpu.sp, 0xff);
+	}
+
+	#[test]
+	fn stack_overflow () {
+		let mut cpu = Mos6502::new();
+		let mut mem: Ram<u16> = Ram::with_capacity(0x01ff_u16);
+		cpu.sp = 0x00;
+		cpu.push(&mut mem, 0x12_u8);
+		assert_eq!(cpu.sp, 0xff);
+		assert_eq!(mem.get(0x0100), 0x12);
+		let val: u8 = cpu.pop(&mem);
+		assert_eq!(val, 0x12);
+		assert_eq!(cpu.sp, 0x00);
+	}
+
+	#[test]
+	fn stack_overflow_word () {
+		let mut cpu = Mos6502::new();
+		let mut mem: Ram<u16> = Ram::with_capacity(0x01ff_u16);
+		cpu.sp = 0x00;
+		cpu.push(&mut mem, 0x1234_u16);
+		assert_eq!(cpu.sp, 0xfe);
+		assert_eq!(mem.get(0x0100), 0x12);
+		assert_eq!(mem.get(0x01ff), 0x34);
+		let val: u16 = cpu.pop(&mem);
+		assert_eq!(val, 0x1234);
+		assert_eq!(cpu.sp, 0x00);
 	}
 }
