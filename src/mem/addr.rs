@@ -74,9 +74,21 @@ pub trait Addressable<A: Addr> {
 		number_from_be_bytes(data)
 	}
 
+	/// Get a number in big endian format from the given masked address
+	fn get_be_masked<T: Primitive> (&self, addr: A, mask: A) -> T {
+		let data = vec::from_fn(Primitive::bytes(None::<T>), |i| self.get(addr.offset_masked(i as int, mask.clone())));
+		number_from_be_bytes(data)
+	}
+
 	/// Get a number in little endian format from the given address
 	fn get_le<T: Primitive> (&self, addr: A) -> T {
 		let data = vec::from_fn(Primitive::bytes(None::<T>), |i| self.get(addr.offset(i as int)));
+		number_from_le_bytes(data)
+	}
+
+	/// Get a number in little endian format from the given masked address
+	fn get_le_masked<T: Primitive> (&self, addr: A, mask: A) -> T {
+		let data = vec::from_fn(Primitive::bytes(None::<T>), |i| self.get(addr.offset_masked(i as int, mask.clone())));
 		number_from_le_bytes(data)
 	}
 
@@ -92,11 +104,29 @@ pub trait Addressable<A: Addr> {
 		});
 	}
 
+	/// Store a number in big endian format to the given masked address
+	fn set_be_masked<T: Primitive> (&mut self, addr: A, mask: A, val: T) {
+		number_to_be_bytes(val, |data| {
+			for (i, &b) in data.iter().enumerate() {
+				self.set(addr.offset_masked(i as int, mask.clone()), b);
+			}
+		});
+	}
+
 	/// Store a number in little endian format to the given address
 	fn set_le<T: Primitive> (&mut self, addr: A, val: T) {
 		number_to_le_bytes(val, |data| {
 			for (i, &b) in data.iter().enumerate() {
 				self.set(addr.offset(i as int), b);
+			}
+		});
+	}
+
+	/// Store a number in little endian format to the given masked address
+	fn set_le_masked<T: Primitive> (&mut self, addr: A, mask: A, val: T) {
+		number_to_le_bytes(val, |data| {
+			for (i, &b) in data.iter().enumerate() {
+				self.set(addr.offset_masked(i as int, mask.clone()), b);
 			}
 		});
 	}
@@ -217,6 +247,13 @@ mod test {
 	}
 
 	#[test]
+	fn get_masked_big_endian_number () {
+		let data = DummyData;
+		assert_eq!(    0xff00_u16, data.get_be_masked(0x12ff_u16, 0x00ff));
+		assert_eq!(0xfeff0001_u32, data.get_be_masked(0x12fe_u16, 0x00ff));
+	}
+
+	#[test]
 	fn get_little_endian_number () {
 		let data = DummyData;
 		assert_eq!(      0x02_u8 , data.get_le(0x0002_u16));
@@ -236,6 +273,13 @@ mod test {
 		assert_eq!(    -0x595b_i16, data.get_le(0x00a5_u16));
 		assert_eq!( 0x57565554_i32, data.get_le(0x0054_u16));
 		assert_eq!(-0x5758595b_i32, data.get_le(0x00a5_u16));
+	}
+
+	#[test]
+	fn get_masked_little_endian_number () {
+		let data = DummyData;
+		assert_eq!(    0x00ff_u16, data.get_le_masked(0x12ff_u16, 0x00ff));
+		assert_eq!(0x0100fffe_u32, data.get_le_masked(0x12fe_u16, 0x00ff));
 	}
 
 	#[test]
@@ -268,6 +312,13 @@ mod test {
 	}
 
 	#[test]
+	fn set_masked_big_endian_number () {
+		let mut data = DummyData;
+		data.set_be_masked(0x12ff_u16, 0x00ff,     0xff00_u16);
+		data.set_be_masked(0x12fe_u16, 0x00ff, 0xfeff0001_u32);
+	}
+
+	#[test]
 	fn set_little_endian_number () {
 		let mut data = DummyData;
 		data.set_le(0x0002_u16,       0x02_u8 );
@@ -287,5 +338,12 @@ mod test {
 		data.set_le(0x00a5_u16,     -0x595b_i16);
 		data.set_le(0x0054_u16,  0x57565554_i32);
 		data.set_le(0x00a5_u16, -0x5758595b_i32);
+	}
+
+	#[test]
+	fn set_masked_little_endian_number () {
+		let mut data = DummyData;
+		data.set_le_masked(0x12ff_u16, 0x00ff,     0x00ff_u16);
+		data.set_le_masked(0x12fe_u16, 0x00ff, 0x0100fffe_u32);
 	}
 }
