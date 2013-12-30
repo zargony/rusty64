@@ -180,12 +180,8 @@ mod test {
 
 	struct DummyData;
 	impl Addressable<u16> for DummyData {
-		fn get (&self, addr: u16) -> u8 {
-			addr as u8
-		}
-		fn set (&mut self, addr: u16, data: u8) {
-			assert_eq!(data, addr as u8);
-		}
+		fn get (&self, addr: u16) -> u8 { addr as u8 }
+		fn set (&mut self, addr: u16, data: u8) { assert_eq!(data, addr as u8); }
 	}
 
 	#[test]

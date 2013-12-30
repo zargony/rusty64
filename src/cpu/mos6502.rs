@@ -92,9 +92,15 @@ impl CPU<u16> for Mos6502 {
 
 #[cfg(test)]
 mod test {
-	use mem::test::TestMemory;
+	use mem::{Addressable, Ram};
 	use super::Mos6502;
 	use super::{CarryFlag, ZeroFlag, OverflowFlag, NegativeFlag};
+
+	struct TestMemory;
+	impl Addressable<u16> for TestMemory {
+		fn get (&self, addr: u16) -> u8 { addr as u8 }
+		fn set (&mut self, addr: u16, data: u8) { assert_eq!(data, addr as u8); }
+	}
 
 	#[test]
 	fn initial_state () {
@@ -105,20 +111,21 @@ mod test {
 	#[test]
 	fn state_after_reset () {
 		let mut cpu = Mos6502::new();
-		let mem: TestMemory<u16> = TestMemory::new();
+		let mem = TestMemory;
 		cpu.reset(&mem);
-		assert_eq!(cpu.pc, 0xfcfb);
+		assert_eq!(cpu.pc, 0xfdfc);
 		assert_eq!(cpu.sr, 0x24);
 	}
 
 	#[test]
 	fn fetch_memory_contents_and_advance_pc () {
 		let mut cpu = Mos6502::new();
-		let mem: TestMemory<u16> = TestMemory::new();
-		let val: u8 = cpu.next(&mem); assert_eq!(val, 0x00);
-		let val: u8 = cpu.next(&mem); assert_eq!(val, 0x01);
-		let val: u16 = cpu.next(&mem); assert_eq!(val, 0x0302);
-		let val: u16 = cpu.next(&mem); assert_eq!(val, 0x0504);
+		let mem = TestMemory;
+		cpu.pc = 0x12;
+		let val: u8 = cpu.next(&mem); assert_eq!(val, 0x12);
+		let val: u8 = cpu.next(&mem); assert_eq!(val, 0x13);
+		let val: u16 = cpu.next(&mem); assert_eq!(val, 0x1514);
+		let val: u16 = cpu.next(&mem); assert_eq!(val, 0x1716);
 	}
 
 	#[test]
