@@ -52,6 +52,44 @@ impl Instruction {
 	}
 }
 
+/// Instruction operand with different addressing modes
+enum Operand {
+	Implied,							// OPC				operand implied
+	Immediate(u8),						// OPC #$BB			operand is value $BB
+	Accumulator,						// OPC A			operand is AC
+	Relative(i8),						// OPC $RR			branch target is PC + signed offset $RR (bit 7 signifies negative offset)
+	Absolute(u16),						// OPC $HHLL		operand is address $HHLL
+	AbsoluteIndexedWithX(u16),			// OPC $HHLL,X		operand is address $HHLL incremented by X
+	AbsoluteIndexedWithY(u16),			// OPC $HHLL,Y		operand is address $HHLL incremented by Y
+	Indirect(u16),						// OPC ($HHLL)		operand is effective address; effective address is value of address; no page transition (MSB-bug)
+	ZeroPage(u8),						// OPC $LL			operand is address $00LL
+	ZeroPageIndexedWithX(u8),			// OPC $LL,X		operand is address $00LL incremented by X; no page transition
+	ZeroPageIndexedWithY(u8),			// OPC $LL,Y		operand is address $00LL incremented by Y; no page transition
+	ZeroPageIndexedWithXIndirect(u8),	// OPC ($LL,X)		operand is effective address; effective address is $00LL incremented by X; no page transition
+	ZeroPageIndirectIndexedWithY(u8),	// OPC ($LL),Y		operand is effective address incremented by Y; effective address is word at $00LL
+}
+
+impl Operand {
+	/// Returns a printable operand mnemonic
+	fn as_str (&self) -> ~str {
+		match *self {
+			Implied => ~"",
+			Immediate(value) => format!("\\#${:02X}", value),
+			Accumulator => ~"A",
+			Relative(offset) => format!("{:+d}", offset),
+			Absolute(addr) => format!("${:04X}", addr),
+			AbsoluteIndexedWithX(addr) => format!("${:04X},X", addr),
+			AbsoluteIndexedWithY(addr) => format!("${:04X},Y", addr),
+			Indirect(addr) => format!("(${:04X})", addr),
+			ZeroPage(addr) => format!("${:02X}", addr),
+			ZeroPageIndexedWithX(addr) => format!("${:02X},X", addr),
+			ZeroPageIndexedWithY(addr) => format!("${:02X},Y", addr),
+			ZeroPageIndexedWithXIndirect(addr) => format!("(${:02X},X)", addr),
+			ZeroPageIndirectIndexedWithY(addr) => format!("(${:02X}),Y", addr),
+		}
+	}
+}
+
 /// Hard-coded address where to look for the address to jump to on nonmaskable interrupt
 static NMI_VECTOR:			u16 = 0xfffa;
 /// Hard-coded address where to look for the address to jump to on reset
