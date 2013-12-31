@@ -263,16 +263,7 @@ mod test {
 	fn initial_state () {
 		let cpu = Mos6502::new();
 		assert_eq!(cpu.pc, 0x0000);
-	}
-
-	#[test]
-	fn state_after_reset () {
-		let mut cpu = Mos6502::new();
-		let mut mem = TestMemory;
-		cpu.reset();
-		cpu.step(&mut mem);
-		assert_eq!(cpu.pc, 0xfdfc);
-		assert_eq!(cpu.sr, 0x24);
+		assert_eq!(cpu.sr, 0x20);
 	}
 
 	#[test]
@@ -363,5 +354,53 @@ mod test {
 		let val: u16 = cpu.pop(&mem);
 		assert_eq!(val, 0x1234);
 		assert_eq!(cpu.sp, 0x00);
+	}
+
+	#[test]
+	fn state_after_reset () {
+		let mut cpu = Mos6502::new();
+		let mut mem: Ram<u16> = Ram::new();
+		cpu.step(&mut mem);
+		assert!(!cpu.reset && !cpu.nmi && !cpu.irq);
+		cpu.sr = 0x23;
+		cpu.sp = 0xff;
+		mem.set_le(0xfffc, 0x1234);
+		cpu.reset();
+		cpu.step(&mut mem);
+		assert_eq!(cpu.pc, 0x1234);
+		assert_eq!(cpu.sr, 0x27);
+		assert_eq!(cpu.sp, 0xff);
+	}
+
+	#[test]
+	fn state_after_nmi () {
+		let mut cpu = Mos6502::new();
+		let mut mem: Ram<u16> = Ram::new();
+		cpu.step(&mut mem);
+		assert!(!cpu.reset && !cpu.nmi && !cpu.irq);
+		cpu.sr = 0x23;
+		cpu.sp = 0xff;
+		mem.set_le(0xfffa, 0x1234);
+		cpu.nmi();
+		cpu.step(&mut mem);
+		assert_eq!(cpu.pc, 0x1234);
+		assert_eq!(cpu.sr, 0x23);
+		assert_eq!(cpu.sp, 0xfc);
+	}
+
+	#[test]
+	fn state_after_irq () {
+		let mut cpu = Mos6502::new();
+		let mut mem: Ram<u16> = Ram::new();
+		cpu.step(&mut mem);
+		assert!(!cpu.reset && !cpu.nmi && !cpu.irq);
+		cpu.sr = 0x23;
+		cpu.sp = 0xff;
+		mem.set_le(0xfffe, 0x1234);
+		cpu.irq();
+		cpu.step(&mut mem);
+		assert_eq!(cpu.pc, 0x1234);
+		assert_eq!(cpu.sr, 0x27);
+		assert_eq!(cpu.sp, 0xfc);
 	}
 }
