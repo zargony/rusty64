@@ -7,6 +7,51 @@ use super::cpu::CPU;
 // Good reference and overview: http://www.obelisk.demon.co.uk/index.html
 // Processor bugs and caveats : http://www.textfiles.com/apple/6502.bugs.txt
 
+/// Processor instructions
+enum Instruction {
+	// Load/store operations
+	LDA, LDX, LDY, STA, STX, STY,
+	// Register transfers
+	TAX, TAY, TXA, TYA,
+	// Stack operations
+	TSX, TXS, PHA, PHP, PLA, PLP,
+	// Logical
+	AND, EOR, ORA, BIT,
+	// Arithmetic
+	ADC, SBC, CMP, CPX, CPY,
+	// Increments & decrements
+	INC, INX, INY, DEC, DEX, DEY,
+	// Shifts
+	ASL, LSR, ROL, ROR,
+	// Jump & calls
+	JMP, JSR, RTS,
+	// Branches
+	BCC, BCS, BEQ, BMI, BNE, BPL, BVC, BVS,
+	// Status flag changes
+	CLC, CLD, CLI, CLV, SEC, SED, SEI,
+	// System functions
+	BRK, NOP, RTI,
+}
+
+impl Instruction {
+	/// Returns a printable instruction mnemonic
+	fn as_str (&self) -> &'static str {
+		match *self {
+			LDA => "LDA", LDX => "LDX", LDY => "LDY", STA => "STA", STX => "STX", STY => "STY",
+			TAX => "TAX", TAY => "TAY", TXA => "TXA", TYA => "TYA",
+			TSX => "TSX", TXS => "TXS", PHA => "PHA", PHP => "PHP", PLA => "PLA", PLP => "PLP",
+			AND => "AND", EOR => "EOR", ORA => "ORA", BIT => "BIT",
+			ADC => "ADC", SBC => "SBC", CMP => "CMP", CPX => "CPX", CPY => "CPY",
+			INC => "INC", INX => "INX", INY => "INY", DEC => "DEC", DEX => "DEX", DEY => "DEY",
+			ASL => "ASL", LSR => "LSR", ROL => "ROL", ROR => "ROR",
+			JMP => "JMP", JSR => "JSR", RTS => "RTS",
+			BCC => "BCC", BCS => "BCS", BEQ => "BEQ", BMI => "BMI", BNE => "BNE", BPL => "BPL", BVC => "BVC", BVS => "BVS",
+			CLC => "CLC", CLD => "CLD", CLI => "CLI", CLV => "CLV", SEC => "SEC", SED => "SED", SEI => "SEI",
+			BRK => "BRK", NOP => "NOP", RTI => "RTI",
+		}
+	}
+}
+
 /// Hard-coded address where to look for the address to jump to on nonmaskable interrupt
 static NMI_VECTOR:			u16 = 0xfffa;
 /// Hard-coded address where to look for the address to jump to on reset
