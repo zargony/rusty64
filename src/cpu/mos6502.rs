@@ -72,6 +72,47 @@ enum Operand {
 }
 
 impl Operand {
+	/// Returns the address an operand targets to
+	fn addr<M: Addressable<u16>> (&self, cpu: &Mos6502, mem: &M) -> u16 {
+		match *self {
+			Implied								=> fail!("mos6502: Implied operand does never target an address"),
+			Immediate(..)						=> fail!("mos6502: Immediate operand does never target an address"),
+			Accumulator							=> fail!("mos6502: Accumulator operand does never target an address"),
+			Relative(offset)					=> cpu.pc + offset as u16,
+			Absolute(addr)						=> addr,
+			AbsoluteIndexedWithX(addr)			=> addr + cpu.x as u16,
+			AbsoluteIndexedWithY(addr)			=> addr + cpu.y as u16,
+			Indirect(addr)						=> mem.get_le_masked(addr, 0x00ff),				// simulating MSB-bug
+			ZeroPage(addr)						=> addr as u16,
+			ZeroPageIndexedWithX(addr)			=> (addr + cpu.x) as u16,						// no page transition
+			ZeroPageIndexedWithY(addr)			=> (addr + cpu.y) as u16,						// no page transition
+			ZeroPageIndexedWithXIndirect(addr)	=> mem.get_le((addr + cpu.x) as u16),			// no page transition
+			ZeroPageIndirectIndexedWithY(addr)	=> mem.get_le::<u16>(addr as u16) + cpu.y as u16,
+		}
+	}
+
+	/// Returns the value an operand specifies
+	fn get<M: Addressable<u16>> (&self, cpu: &Mos6502, mem: &M) -> u8 {
+		match *self {
+			Implied								=> fail!("mos6502: Implied operand does never have a value"),
+			Immediate(value)					=> value,
+			Accumulator							=> cpu.ac,
+			Relative(..)						=> fail!("mos6502: Relative operand does never have a value"),
+			op									=> mem.get(op.addr(cpu, mem)),
+		}
+	}
+
+	/// Sets the value an operand specifies
+	fn set<M: Addressable<u16>> (&self, cpu: &mut Mos6502, mem: &mut M, value: u8) {
+		match *self {
+			Implied								=> fail!("mos6502: Implied operand does never set a value"),
+			Immediate(..)						=> fail!("mos6502: Immediate operand does never set a value"),
+			Accumulator							=> cpu.ac = value,
+			Relative(..)						=> fail!("mos6502: Relative operand does never set a value"),
+			op									=> { let addr = op.addr(cpu, mem); mem.set(addr, value); },
+		}
+	}
+
 	/// Returns a printable operand mnemonic
 	fn as_str (&self) -> ~str {
 		match *self {
@@ -452,13 +493,115 @@ impl CPU<u16> for Mos6502 {
 #[cfg(test)]
 mod test {
 	use mem::{Addressable, Ram};
-	use super::Mos6502;
+	use super::LDA;
+	use super::{Immediate, Accumulator, Relative, Absolute, AbsoluteIndexedWithX, AbsoluteIndexedWithY, Indirect};
+	use super::{ZeroPage, ZeroPageIndexedWithX, ZeroPageIndexedWithY, ZeroPageIndexedWithXIndirect, ZeroPageIndirectIndexedWithY};
 	use super::{CarryFlag, ZeroFlag, OverflowFlag, NegativeFlag};
+	use super::Mos6502;
 
+	/// Test-memory that returns/expects the lower nibble of the address as data
 	struct TestMemory;
 	impl Addressable<u16> for TestMemory {
 		fn get (&self, addr: u16) -> u8 { addr as u8 }
 		fn set (&mut self, addr: u16, data: u8) { assert_eq!(data, addr as u8); }
+	}
+
+	/// Test-memory that returns/expects the sum of the lower and higher nibble of the address as data
+	struct SpecialTestMemory;
+	impl Addressable<u16> for SpecialTestMemory {
+		fn get (&self, addr: u16) -> u8 { addr as u8 + (addr >> 8) as u8 }
+		fn set (&mut self, addr: u16, data: u8) { assert_eq!(data, addr as u8 + (addr >> 8) as u8); }
+	}
+
+	#[test]
+	fn addressing_modes () {
+		let mut cpu = Mos6502::new();
+		cpu.pc = 0x1337; cpu.ac = 0x88; cpu.x = 0x11; cpu.y = 0x22;
+		let mut mem = TestMemory;
+		// Immediate
+		assert_eq!(Immediate(0x55).get(&cpu, &mem), 0x55);
+		// Accumulator
+		assert_eq!(Accumulator.get(&cpu, &mem), 0x88);
+		Accumulator.set(&mut cpu, &mut mem, 0x99); assert_eq!(cpu.ac, 0x99);
+		// Relative
+		assert_eq!(Relative(0x33).addr(&cpu, &mem), 0x136a);
+		assert_eq!(Relative(-0x33).addr(&cpu, &mem), 0x1304);
+		// Absolute
+		assert_eq!(Absolute(0x0123).addr(&cpu, &mem), 0x0123);
+		assert_eq!(Absolute(0x0123).get(&cpu, &mem), 0x23);
+		Absolute(0x0123).set(&mut cpu, &mut mem, 0x23);
+		// AbsoluteIndexedWithX
+		assert_eq!(AbsoluteIndexedWithX(0x0123).addr(&cpu, &mem), 0x0134);
+		assert_eq!(AbsoluteIndexedWithX(0x0123).get(&cpu, &mem), 0x34);
+		AbsoluteIndexedWithX(0x0123).set(&mut cpu, &mut mem, 0x34);
+		// AbsoluteIndexedWithY
+		assert_eq!(AbsoluteIndexedWithY(0x0123).addr(&cpu, &mem), 0x0145);
+		assert_eq!(AbsoluteIndexedWithY(0x0123).get(&cpu, &mem), 0x45);
+		AbsoluteIndexedWithY(0x0123).set(&mut cpu, &mut mem, 0x45);
+		// Indirect
+		assert_eq!(Indirect(0x0123).addr(&cpu, &mem), 0x2423);
+		assert_eq!(Indirect(0x0123).get(&cpu, &mem), 0x23);
+		Indirect(0x0123).set(&mut cpu, &mut mem, 0x23);
+		// ZeroPage
+		assert_eq!(ZeroPage(0x12).addr(&cpu, &mem), 0x0012);
+		assert_eq!(ZeroPage(0x12).get(&cpu, &mem), 0x12);
+		ZeroPage(0x12).set(&mut cpu, &mut mem, 0x12);
+		// ZeroPageIndexedWithX
+		assert_eq!(ZeroPageIndexedWithX(0x12).addr(&cpu, &mem), 0x0023);
+		assert_eq!(ZeroPageIndexedWithX(0x12).get(&cpu, &mem), 0x23);
+		ZeroPageIndexedWithX(0x12).set(&mut cpu, &mut mem, 0x23);
+		// ZeroPageIndexedWithY
+		assert_eq!(ZeroPageIndexedWithY(0x12).addr(&cpu, &mem), 0x0034);
+		assert_eq!(ZeroPageIndexedWithY(0x12).get(&cpu, &mem), 0x34);
+		ZeroPageIndexedWithY(0x12).set(&mut cpu, &mut mem, 0x34);
+		// ZeroPageIndexedWithXIndirect
+		assert_eq!(ZeroPageIndexedWithXIndirect(0x12).addr(&cpu, &mem), 0x2423);
+		assert_eq!(ZeroPageIndexedWithXIndirect(0x12).get(&cpu, &mem), 0x23);
+		ZeroPageIndexedWithXIndirect(0x12).set(&mut cpu, &mut mem, 0x23);
+		// ZeroPageIndirectIndexedWithY
+		assert_eq!(ZeroPageIndirectIndexedWithY(0x12).addr(&cpu, &mem), 0x1334);
+		assert_eq!(ZeroPageIndirectIndexedWithY(0x12).get(&cpu, &mem), 0x34);
+		ZeroPageIndirectIndexedWithY(0x12).set(&mut cpu, &mut mem, 0x34);
+	}
+
+	#[test]
+	fn indirect_addressing_bug () {
+		let cpu = Mos6502::new();
+		let mem = SpecialTestMemory;
+		// Indirect($c0ff) must erroneously get address from $c0ff/$c000 instead of $c0ff/$c100
+		assert_eq!(Indirect(0xc0ff).addr(&cpu, &mem), 0xc0bf);		// must be $c0bf, not $c1bf
+	}
+
+	#[test]
+	fn zero_page_indexed_page_transition () {
+		let mut cpu = Mos6502::new();
+		cpu.x = 0x11; cpu.y = 0x22;
+		let mem = SpecialTestMemory;
+		// Zero-page indexed addressing must not transition to the next page
+		assert_eq!(ZeroPageIndexedWithX(0xff).addr(&cpu, &mem), 0x0010);	// must be $0010, not $0110
+		assert_eq!(ZeroPageIndexedWithY(0xff).addr(&cpu, &mem), 0x0021);	// must be $0021, not $0121
+	}
+
+	#[test]
+	fn zero_page_indexed_indirect_page_transition () {
+		let mut cpu = Mos6502::new();
+		cpu.x = 0x11;
+		let mem = SpecialTestMemory;
+		// Zero-page indexed indirect addressing must not transition to the next page when indexing...
+		assert_eq!(ZeroPageIndexedWithXIndirect(0xff).addr(&cpu, &mem), 0x1110);	// must be $1110, not $1211
+		// ...but may transition to the next page when indirecting
+		assert_eq!(ZeroPageIndexedWithXIndirect(0xee).addr(&cpu, &mem), 0x01ff);	// must be $01ff, not $00ff
+	}
+
+	#[test]
+	fn zero_page_indirect_indexed_page_transition () {
+		let mut cpu = Mos6502::new();
+		cpu.y = 0x22;
+		let mem = SpecialTestMemory;
+		// Zero-page indirect indexed addressing may transition to the next page when indirecting...
+		assert_eq!(ZeroPageIndirectIndexedWithY(0xff).addr(&cpu, &mem), 0x0221);	// must be $0221, not $0121
+		// ...and may transition to the next page when indexing
+		assert_eq!(ZeroPageIndirectIndexedWithY(0xf0).addr(&cpu, &mem), 0xf212);	// must be $f212, not $f112
 	}
 
 	#[test]
