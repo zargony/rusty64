@@ -38,9 +38,9 @@ impl C64Memory {
 	fn new () -> C64Memory {
 		C64Memory {
 			ram: Ram::new(),
-			kernal: Rom::new(&Path::new("kernal.rom")),
-			basic: Rom::new(&Path::new("basic.rom")),
-			characters: Rom::new(&Path::new("characters.rom")),
+			kernal: Rom::new(&Path::new("c64/kernal.rom")),
+			basic: Rom::new(&Path::new("c64/basic.rom")),
+			characters: Rom::new(&Path::new("c64/characters.rom")),
 		}
 	}
 }
