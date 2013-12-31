@@ -75,19 +75,19 @@ impl Operand {
 	/// Returns a printable operand mnemonic
 	fn as_str (&self) -> ~str {
 		match *self {
-			Implied => ~"",
-			Immediate(value) => format!("\\#${:02X}", value),
-			Accumulator => ~"A",
-			Relative(offset) => format!("{:+d}", offset),
-			Absolute(addr) => format!("${:04X}", addr),
-			AbsoluteIndexedWithX(addr) => format!("${:04X},X", addr),
-			AbsoluteIndexedWithY(addr) => format!("${:04X},Y", addr),
-			Indirect(addr) => format!("(${:04X})", addr),
-			ZeroPage(addr) => format!("${:02X}", addr),
-			ZeroPageIndexedWithX(addr) => format!("${:02X},X", addr),
-			ZeroPageIndexedWithY(addr) => format!("${:02X},Y", addr),
-			ZeroPageIndexedWithXIndirect(addr) => format!("(${:02X},X)", addr),
-			ZeroPageIndirectIndexedWithY(addr) => format!("(${:02X}),Y", addr),
+			Implied								=> ~"",
+			Immediate(value)					=> format!("\\#${:02X}", value),
+			Accumulator							=> ~"A",
+			Relative(offset)					=> format!("{:+d}", offset),
+			Absolute(addr)						=> format!("${:04X}", addr),
+			AbsoluteIndexedWithX(addr)			=> format!("${:04X},X", addr),
+			AbsoluteIndexedWithY(addr)			=> format!("${:04X},Y", addr),
+			Indirect(addr)						=> format!("(${:04X})", addr),
+			ZeroPage(addr)						=> format!("${:02X}", addr),
+			ZeroPageIndexedWithX(addr)			=> format!("${:02X},X", addr),
+			ZeroPageIndexedWithY(addr)			=> format!("${:02X},Y", addr),
+			ZeroPageIndexedWithXIndirect(addr)	=> format!("(${:02X},X)", addr),
+			ZeroPageIndirectIndexedWithY(addr)	=> format!("(${:02X}),Y", addr),
 		}
 	}
 }
