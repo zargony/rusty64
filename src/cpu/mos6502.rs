@@ -40,6 +40,267 @@ enum Instruction {
 }
 
 impl Instruction {
+	/// Execute an instruction using the given environment
+	fn execute<M: Addressable<u16>> (&self, cpu: &mut Mos6502, mem: &mut M, operand: &Operand) {
+		match *self {
+			// Load/store operations
+			LDA => {								// load accumulator [N,Z]
+				cpu.ac = operand.get(cpu, mem);
+				cpu.set_zn(cpu.ac);
+			},
+			LDX => {								// load X register [N,Z]
+				cpu.x = operand.get(cpu, mem);
+				cpu.set_zn(cpu.x);
+			},
+			LDY => {								// load Y register [N,Z]
+				cpu.y = operand.get(cpu, mem);
+				cpu.set_zn(cpu.y);
+			},
+			STA => {								// store accumulator
+				operand.set(cpu, mem, cpu.ac);
+			},
+			STX => {								// store X register
+				operand.set(cpu, mem, cpu.x);
+			},
+			STY => {								// store Y register
+				operand.set(cpu, mem, cpu.y);
+			},
+			// Register transfers
+			TAX => {								// transfer accumulator to X [N,Z]
+				cpu.x = cpu.ac;
+				cpu.set_zn(cpu.x);
+			},
+			TAY => {								// transfer accumulator to Y [N,Z]
+				cpu.y = cpu.ac;
+				cpu.set_zn(cpu.y);
+			},
+			TXA => {								// transfer X to accumulator [N,Z]
+				cpu.ac = cpu.x;
+				cpu.set_zn(cpu.ac);
+			},
+			TYA => {								// transfer Y to accumulator [N,Z]
+				cpu.ac = cpu.y;
+				cpu.set_zn(cpu.ac);
+			},
+			// Stack operations
+			TSX => {								// transfer stack pointer to X [N,Z]
+				cpu.x = cpu.sp;
+				cpu.set_zn(cpu.x);
+			},
+			TXS => {								// transfer X to stack pointer
+				cpu.sp = cpu.x;
+			},
+			PHA => {								// push accumulator on stack
+				cpu.push(mem, cpu.ac);
+			},
+			PHP => {								// push processor status (SR) on stack
+				cpu.push(mem, cpu.sr);
+			},
+			PLA => {								// pull accumulator from stack [N,Z]
+				cpu.ac = cpu.pop(mem);
+				cpu.set_zn(cpu.ac);
+			},
+			PLP => {								// pull processor status (SR) from stack [all]
+				cpu.sr = cpu.pop(mem);
+			},
+			// Logical
+			AND => {								// logical AND [N,Z]
+				cpu.ac &= operand.get(cpu, mem);
+				cpu.set_zn(cpu.ac);
+			},
+			EOR => {								// exclusive OR [N,Z]
+				cpu.ac ^= operand.get(cpu, mem);
+				cpu.set_zn(cpu.ac);
+			},
+			ORA => {								// logical inclusive OR [N,Z]
+				cpu.ac |= operand.get(cpu, mem);
+				cpu.set_zn(cpu.ac);
+			},
+			BIT => {								// bit test [N,V,Z]
+				let value = operand.get(cpu, mem);
+				cpu.set_flag(ZeroFlag, (value & cpu.ac) == 0);
+				cpu.set_flag(NegativeFlag, (value & 0x80) != 0);
+				cpu.set_flag(OverflowFlag, (value & 0x40) != 0);
+			},
+			// Arithmetic
+			ADC => {								// add with carry [N,V,Z,C]
+				fail!("mos6502: ADC instruction not implemented yet");				// TODO
+			},
+			SBC => {								// subtract with carry [N,V,Z,C]
+				fail!("mos6502: SBC instruction not implemented yet");				// TODO
+			},
+			CMP => {								// compare (with accumulator) [N,Z,C]
+				let result = cpu.ac as i16 - operand.get(cpu, mem) as i16;
+				cpu.set_flag(CarryFlag, result >= 0);
+				cpu.set_zn(result as u8);
+			},
+			CPX => {								// compare with X register [N,Z,C]
+				let result = cpu.x as i16 - operand.get(cpu, mem) as i16;
+				cpu.set_flag(CarryFlag, result >= 0);
+				cpu.set_zn(result as u8);
+			},
+			CPY => {								// compare with Y register [N,Z,C]
+				let result = cpu.y as i16 - operand.get(cpu, mem) as i16;
+				cpu.set_flag(CarryFlag, result >= 0);
+				cpu.set_zn(result as u8);
+			},
+			// Increments & decrements
+			INC => {								// increment a memory location [N,Z]
+				let value = operand.get(cpu, mem) + 1;
+				operand.set(cpu, mem, value);
+				cpu.set_zn(value);
+			},
+			INX => {								// increment X register [N,Z]
+				cpu.x += 1;
+				cpu.set_zn(cpu.x);
+			},
+			INY => {								// increment Y register [N,Z]
+				cpu.y += 1;
+				cpu.set_zn(cpu.y);
+			},
+			DEC => {								// decrement a memory location [N,Z]
+				let value = operand.get(cpu, mem) - 1;
+				operand.set(cpu, mem, value);
+				cpu.set_zn(value);
+			},
+			DEX => {								// decrement X register [N,Z]
+				cpu.x -= 1;
+				cpu.set_zn(cpu.x);
+			},
+			DEY => {								// decrement Y register [N,Z]
+				cpu.y -= 1;
+				cpu.set_zn(cpu.y);
+			},
+			// Shifts
+			ASL => {								// arithmetic shift left [N,Z,C]
+				let value = operand.get(cpu, mem);
+				cpu.set_flag(CarryFlag, (value & 0x80) != 0);
+				let result = value << 1;
+				operand.set(cpu, mem, result);
+				cpu.set_zn(result);
+			},
+			LSR => {								// logical shift right [N,Z,C]
+				let value = operand.get(cpu, mem);
+				cpu.set_flag(CarryFlag, (value & 0x01) != 0);
+				let result = value >> 1;
+				operand.set(cpu, mem, result);
+				cpu.set_zn(result);
+			},
+			ROL => {								// rotate left [N,Z,C]
+				let carry = cpu.get_flag(CarryFlag);
+				let value = operand.get(cpu, mem);
+				cpu.set_flag(CarryFlag, (value & 0x80) != 0);
+				let mut result = value << 1;
+				if carry { result |= 0x01 }
+				operand.set(cpu, mem, result);
+				cpu.set_zn(result);
+			},
+			ROR => {								// rotate right [N,Z,C]
+				let carry = cpu.get_flag(CarryFlag);
+				let value = operand.get(cpu, mem);
+				cpu.set_flag(CarryFlag, (value & 0x01) != 0);
+				let mut result = value >> 1;
+				if carry { result |= 0x80 }
+				operand.set(cpu, mem, result);
+				cpu.set_zn(result);
+			},
+			// Jump & calls
+			JMP => {								// jump to another location
+				cpu.pc = operand.addr(cpu, mem);
+			},
+			JSR => {								// jump to a subroutine
+				// Instead of pushing the address of the next instruction, JSR pushes
+				// the address before it (last byte of previous instruction)
+				cpu.push(mem, cpu.pc - 1);
+				cpu.pc = operand.addr(cpu, mem);
+			},
+			RTS => {								// return from subroutine
+				// Since JSR pushed PC minus 1, RTS needs to add 1 to the PC
+				cpu.pc = cpu.pop(mem);
+				cpu.pc += 1;
+			},
+			// Branches
+			BCC => {								// branch if carry flag clear
+				if !cpu.get_flag(CarryFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BCS => {								// branch if carry flag set
+				if cpu.get_flag(CarryFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BEQ => {								// branch if zero flag set
+				if cpu.get_flag(ZeroFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BMI => {								// branch if negative flag set
+				if cpu.get_flag(NegativeFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BNE => {								// branch if zero flag clear
+				if !cpu.get_flag(ZeroFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BPL => {								// branch if negative flag clear
+				if !cpu.get_flag(NegativeFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BVC => {								// branch if overflow flag clear
+				if !cpu.get_flag(OverflowFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			BVS => {								// branch if overflow flag set
+				if cpu.get_flag(OverflowFlag) {
+					cpu.pc = operand.addr(cpu, mem);
+				}
+			},
+			// Status flag changes
+			CLC => {								// clear carry flag [C]
+				cpu.set_flag(CarryFlag, false);
+			},
+			CLD => {								// clear decimal mode flag [D]
+				cpu.set_flag(DecimalFlag, false);
+			},
+			CLI => {								// clear interrupt disable flag [I]
+				cpu.set_flag(InterruptDisableFlag, false);
+			},
+			CLV => {								// clear overflow flag [V]
+				cpu.set_flag(OverflowFlag, false);
+			},
+			SEC => {								// set carry flag [C]
+				cpu.set_flag(CarryFlag, true);
+			},
+			SED => {								// set decimal mode flag [D]
+				cpu.set_flag(DecimalFlag, true);
+			},
+			SEI => {								// set interrupt disable flag [I]
+				cpu.set_flag(InterruptDisableFlag, true);
+			},
+			// System functions
+			BRK => {								// force an interrupt [B]
+				cpu.set_flag(BreakFlag, true);
+				cpu.push(mem, cpu.pc);
+				cpu.push(mem, cpu.sr);
+				cpu.set_flag(InterruptDisableFlag, true);
+				cpu.pc = mem.get_le(IRQ_VECTOR);
+				debug!("mos6502: BRK - Jumping to (${:04X}) -> ${:04X}", IRQ_VECTOR, cpu.pc);
+			},
+			NOP => {								// no operation
+			},
+			RTI => {								// return from interrupt [all]
+				// Do not add 1 to the PC like RTS does
+				cpu.sr = cpu.pop(mem);
+				cpu.pc = cpu.pop(mem);
+			},
+		}
+	}
+
 	/// Returns a printable instruction mnemonic
 	fn as_str (&self) -> &'static str {
 		match *self {
@@ -476,10 +737,7 @@ impl CPU<u16> for Mos6502 {
 			// Got valid opcode
 			Some((cycles, instruction, operand)) => {
 				let new_pc = self.pc;
-
-				// TODO: Execute the instruction
-				//instruction.execute(self, mem, operand)
-
+				instruction.execute(self, mem, &operand);
 				debug!("mos6502: {:04X}  {:-8s}  {:-3s} {:-26s}  -[{:u}]-> AC:{:02X} X:{:02X} Y:{:02X} SR:{:02X} SP:{:02X} NV-BDIZC:{:08t}",
 					old_pc, hexdump(mem, old_pc, new_pc), instruction.as_str(), operand.as_str(),
 					cycles, self.ac, self.x, self.y, self.sr, self.sp, self.sr);
