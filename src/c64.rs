@@ -2,11 +2,14 @@
 #[copyright = "Andreas Neuhaus <info@zargony.com>"];
 #[license = "MIT"];
 
-use cpu::mos65xx::Mos6510;
+use cpu::cpu::CPU;
+use cpu::mos6510::Mos6510;
 use mem::{Addressable, Ram, Rom};
 
 pub mod cpu {
-	pub mod mos65xx;
+	pub mod cpu;
+	pub mod mos6502;
+	pub mod mos6510;
 }
 pub mod mem;
 
