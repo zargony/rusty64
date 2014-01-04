@@ -304,8 +304,10 @@ impl Instruction {
 				// An IRQ does the same, but clears BreakFlag (before pushing SR).
 				cpu.set_flag(BreakFlag, true);
 				// Unlike JSR, interrupts push the address of the next
-				// instruction to the stack.
-				cpu.push(mem, cpu.pc);
+				// instruction to the stack. The next byte after BRK is
+				// skipped. It can be used to pass information to the
+				// interrupt handler.
+				cpu.push(mem, cpu.pc + 1);
 				cpu.push(mem, cpu.sr);
 				cpu.set_flag(InterruptDisableFlag, true);
 				cpu.pc = mem.get_le(IRQ_VECTOR);
