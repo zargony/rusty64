@@ -11,6 +11,7 @@ use super::cpu::CPU;
 // Test ROMs: http://wiki.nesdev.com/w/index.php/Emulator_tests#CPU
 //            http://www.6502.org/tools/emu/
 //            http://visual6502.org/wiki/index.php?title=6502TestPrograms
+//            http://forum.6502.org/viewtopic.php?f=2&t=2241
 
 /// Processor instructions
 #[deriving(Eq)]
