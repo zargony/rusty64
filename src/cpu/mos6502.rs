@@ -102,6 +102,7 @@ impl Instruction {
 			},
 			PLP => {								// pull processor status (SR) from stack [all]
 				cpu.sr = cpu.pop(mem);
+				cpu.sr |= 0x20;
 			},
 			// Logical
 			AND => {								// logical AND [N,Z]
