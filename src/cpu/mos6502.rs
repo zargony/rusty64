@@ -782,7 +782,7 @@ impl CPU<u16> for Mos6502 {
 
 #[cfg(test)]
 mod test {
-	use mem::{Addressable, Ram};
+	use mem::{Addressable, Ram, Rom};
 	use super::LDA;
 	use super::{Immediate, Accumulator, Relative, Absolute, AbsoluteIndexedWithX, AbsoluteIndexedWithY, Indirect};
 	use super::{ZeroPage, ZeroPageIndexedWithX, ZeroPageIndexedWithY, ZeroPageIndexedWithXIndirect, ZeroPageIndirectIndexedWithY};
@@ -1065,5 +1065,21 @@ mod test {
 		assert!(!cpu.get_flag(BreakFlag));
 		cpu.step(&mut mem);					// IRQ handler returns
 		assert_eq!(cpu.pc, 0x1001);			// BRK was skipped
+	}
+
+	#[test]
+	fn ruud_baltissen_core_instruction_rom () {
+		// Test all instructions using Ruud Baltissen's test ROM from his VHDL 6502 core.
+		// See also http://visual6502.org/wiki/index.php?title=6502TestPrograms
+		let mut cpu = Mos6502::new();
+		let mut mem: Ram<u16> = Ram::new();
+		let rom: Rom<u16> = Rom::new(&Path::new("test/ttl6502_v10.rom"));
+		for i in range(0_u16, rom.size() as u16) { mem.set(i + 0xe000, rom.get(i)); }
+		3000.times(|| {
+			cpu.step(&mut mem);
+			if cpu.pc == 0xf5b6 { cpu.pc = 0xf5e6; }		// TODO: This skips decimal mode tests for now
+		});
+		let status = mem.get(0x0003);
+		assert!(status == 0xfe, format!("stopped at ${:04X} with status ${:02X}", cpu.pc, status));
 	}
 }
