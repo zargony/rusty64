@@ -727,10 +727,12 @@ impl CPU<u16> for Mos6502 {
 		if self.irq && !self.get_flag(InterruptDisableFlag) {
 			// An IRQ pushes PC and SR to the stack, jumps to the vector at IRQ_VECTOR and
 			// sets the InterruptDisableFlag. Unlike JSR, it pushes the address of the next
-			// instruction to the stack.
+			// instruction to the stack. This also emulates the BRK bug where a BRK instruction
+			// is ignored if an IRQ occurs simultaneously.
 			// The BRK instruction does the same, but sets BreakFlag (before pushing SR).
 			// See also http://6502.org/tutorials/interrupts.html
 			self.set_flag(BreakFlag, false);
+			if mem.get(self.pc) == 0x00 { self.pc += 1; }	// Emulate BRK bug
 			self.push(mem, self.pc);
 			self.push(mem, self.sr);
 			self.set_flag(InterruptDisableFlag, true);
@@ -782,7 +784,7 @@ mod test {
 	use super::LDA;
 	use super::{Immediate, Accumulator, Relative, Absolute, AbsoluteIndexedWithX, AbsoluteIndexedWithY, Indirect};
 	use super::{ZeroPage, ZeroPageIndexedWithX, ZeroPageIndexedWithY, ZeroPageIndexedWithXIndirect, ZeroPageIndirectIndexedWithY};
-	use super::{CarryFlag, ZeroFlag, OverflowFlag, NegativeFlag};
+	use super::{CarryFlag, ZeroFlag, BreakFlag, OverflowFlag, NegativeFlag};
 	use super::Mos6502;
 
 	/// Test-memory that returns/expects the lower nibble of the address as data
@@ -1041,5 +1043,25 @@ mod test {
 		assert_eq!(cpu.pc, 0x1234);
 		assert_eq!(cpu.sr, 0x27);
 		assert_eq!(cpu.sp, 0xfc);
+	}
+
+	#[test]
+	fn brk_bug () {
+		let mut cpu = Mos6502::new();
+		let mut mem: Ram<u16> = Ram::new();
+		cpu.step(&mut mem);
+		assert!(!cpu.reset && !cpu.nmi && !cpu.irq);
+		cpu.pc = 0x1000;
+		cpu.sr = 0x20;
+		cpu.sp = 0xff;
+		mem.set_le(0x1000, 0x00);			// 00: BRK
+		mem.set_le(0x2000, 0x40);			// 40: RTI
+		mem.set_le(0xfffe, 0x2000);
+		cpu.irq();
+		cpu.step(&mut mem);					// IRQ happens when BRK is next instruction
+		assert_eq!(cpu.pc, 0x2000);			// IRQ is handled
+		assert!(!cpu.get_flag(BreakFlag));
+		cpu.step(&mut mem);					// IRQ handler returns
+		assert_eq!(cpu.pc, 0x1001);			// BRK was skipped
 	}
 }
