@@ -139,7 +139,7 @@ impl Instruction {
 				if cpu.get_flag(DecimalFlag) { fail!("mos6502: Decimal mode SBC not supported yet :("); }
 				let value = operand.get(cpu, mem);
 				let mut result = cpu.ac as u16 - value as u16;
-				if cpu.get_flag(CarryFlag) { result -= 1; }
+				if !cpu.get_flag(CarryFlag) { result -= 1; }
 				cpu.set_flag(CarryFlag, (result & 0x100) == 0);
 				let result = result as u8;
 				cpu.set_flag(OverflowFlag, (cpu.ac ^ result) & 0x80 != 0 && (cpu.ac ^ value) & 0x80 == 0x80);
