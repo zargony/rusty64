@@ -124,10 +124,26 @@ impl Instruction {
 			},
 			// Arithmetic
 			ADC => {								// add with carry [N,V,Z,C]
-				fail!("mos6502: ADC instruction not implemented yet");				// TODO
+				if cpu.get_flag(DecimalFlag) { fail!("mos6502: Decimal mode ADC not supported yet :("); }
+				let value = operand.get(cpu, mem);
+				let mut result = cpu.ac as u16 + value as u16;
+				if cpu.get_flag(CarryFlag) { result += 1; }
+				cpu.set_flag(CarryFlag, (result & 0x100) != 0);
+				let result = result as u8;
+				cpu.set_flag(OverflowFlag, (cpu.ac ^ value) & 0x80 == 0 && (cpu.ac ^ result) & 0x80 == 0x80);
+				cpu.ac = result;
+				cpu.set_zn(cpu.ac);
 			},
 			SBC => {								// subtract with carry [N,V,Z,C]
-				fail!("mos6502: SBC instruction not implemented yet");				// TODO
+				if cpu.get_flag(DecimalFlag) { fail!("mos6502: Decimal mode SBC not supported yet :("); }
+				let value = operand.get(cpu, mem);
+				let mut result = cpu.ac as u16 - value as u16;
+				if cpu.get_flag(CarryFlag) { result -= 1; }
+				cpu.set_flag(CarryFlag, (result & 0x100) == 0);
+				let result = result as u8;
+				cpu.set_flag(OverflowFlag, (cpu.ac ^ result) & 0x80 != 0 && (cpu.ac ^ value) & 0x80 == 0x80);
+				cpu.ac = result;
+				cpu.set_zn(cpu.ac);
 			},
 			CMP => {								// compare (with accumulator) [N,Z,C]
 				let result = cpu.ac as i16 - operand.get(cpu, mem) as i16;
