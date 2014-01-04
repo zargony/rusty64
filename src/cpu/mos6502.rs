@@ -226,14 +226,14 @@ impl Instruction {
 				cpu.pc = operand.addr(cpu, mem);
 			},
 			JSR => {								// jump to a subroutine
-				// Instead of pushing the address of the next instruction, JSR pushes
-				// the address before it (last byte of previous instruction)
+				// Push the address of the last byte of this instruction to the
+				// stack instead of the address of the next isntruction.
 				cpu.push(mem, cpu.pc - 1);
 				cpu.pc = operand.addr(cpu, mem);
 			},
 			RTS => {								// return from subroutine
-				// Since JSR pushed PC minus 1, RTS needs to add 1 to the PC
 				cpu.pc = cpu.pop(mem);
+				// Need to advance the PC by 1 to step to the next instruction
 				cpu.pc += 1;
 			},
 			// Branches
@@ -301,7 +301,10 @@ impl Instruction {
 			},
 			// System functions
 			BRK => {								// force an interrupt [B]
+				// An IRQ does the same, but clears BreakFlag (before pushing SR).
 				cpu.set_flag(BreakFlag, true);
+				// Unlike JSR, interrupts push the address of the next
+				// instruction to the stack.
 				cpu.push(mem, cpu.pc);
 				cpu.push(mem, cpu.sr);
 				cpu.set_flag(InterruptDisableFlag, true);
@@ -311,9 +314,10 @@ impl Instruction {
 			NOP => {								// no operation
 			},
 			RTI => {								// return from interrupt [all]
-				// Do not add 1 to the PC like RTS does
 				cpu.sr = cpu.pop(mem);
 				cpu.pc = cpu.pop(mem);
+				// Unlike RTS, do not advance the PC since it already points to
+				// the next instruction
 			},
 		}
 	}
@@ -709,7 +713,8 @@ impl CPU<u16> for Mos6502 {
 		// Process NMI if line was triggered
 		if self.nmi {
 			// An NMI pushes PC and SR to the stack and jumps to the vector at NMI_VECTOR.
-			// It does NOT set the InterruptDisableFlag.
+			// It does NOT set the InterruptDisableFlag. Unlike JSR, it pushes the address
+			// of the next instruction to the stack.
 			// See also http://6502.org/tutorials/interrupts.html
 			self.push(mem, self.pc);
 			self.push(mem, self.sr);
@@ -721,7 +726,8 @@ impl CPU<u16> for Mos6502 {
 		// Process IRQ if line was triggered and interrupts are enabled
 		if self.irq && !self.get_flag(InterruptDisableFlag) {
 			// An IRQ pushes PC and SR to the stack, jumps to the vector at IRQ_VECTOR and
-			// sets the InterruptDisableFlag.
+			// sets the InterruptDisableFlag. Unlike JSR, it pushes the address of the next
+			// instruction to the stack.
 			// The BRK instruction does the same, but sets BreakFlag (before pushing SR).
 			// See also http://6502.org/tutorials/interrupts.html
 			self.set_flag(BreakFlag, false);
