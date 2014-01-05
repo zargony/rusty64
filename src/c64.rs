@@ -4,7 +4,7 @@
 
 use cpu::cpu::CPU;
 use cpu::mos6510::Mos6510;
-use mem::{Addressable, Ram, Rom};
+use mem::{Addressable, Ram, Rom, SharedMemory};
 
 pub mod cpu {
 	pub mod cpu;
@@ -67,14 +67,14 @@ impl Addressable<u16> for C64Memory {
 
 pub struct C64 {
 	priv cpu: Mos6510,
-	priv mem: C64Memory,
+	priv mem: SharedMemory<C64Memory>,
 }
 
 impl C64 {
 	pub fn new () -> C64 {
 		C64 {
 			cpu: Mos6510::new(),
-			mem: C64Memory::new(),
+			mem: SharedMemory::new(C64Memory::new()),
 		}
 	}
 
