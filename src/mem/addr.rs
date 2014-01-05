@@ -130,6 +130,18 @@ pub trait Addressable<A: Addr> {
 			}
 		});
 	}
+
+	// Build a hexdump string of the given address range
+	fn hexdump (&self, addr1: A, addr2: A) -> ~str {
+		let mut addr = addr1;
+		let mut s = ~"";
+		while addr < addr2 {
+			s.push_str(format!("{:02X} ", self.get(addr.clone())));
+			addr = addr.offset(1);
+		}
+		if s.len() > 0 { s.pop_char(); }
+		s
+	}
 }
 
 
@@ -345,5 +357,13 @@ mod test {
 		let mut data = DummyData;
 		data.set_le_masked(0x12ff_u16, 0x00ff,     0x00ff_u16);
 		data.set_le_masked(0x12fe_u16, 0x00ff, 0x0100fffe_u32);
+	}
+
+	#[test]
+	fn dumping_memory () {
+		let data = DummyData;
+		assert_eq!(data.hexdump(0x0100_u16, 0x0100_u16), ~"");
+		assert_eq!(data.hexdump(0x0100_u16, 0x0101_u16), ~"00");
+		assert_eq!(data.hexdump(0x0100_u16, 0x0105_u16), ~"00 01 02 03 04");
 	}
 }

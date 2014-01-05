@@ -748,17 +748,6 @@ impl CPU<u16> for Mos6502 {
 			debug!("mos6502: IRQ - Jumping to (${:04X}) -> ${:04X}", IRQ_VECTOR, self.pc);
 			return 7;
 		}
-		// Helper function to print a hexdump with up to 4 bytes
-		fn hexdump<M: Addressable<u16>> (mem: &M, addr: u16, addr2: u16) -> ~str {
-			match addr2 - addr {
-				0 => ~"",
-				1 => format!("{:02X}", mem.get(addr)),
-				2 => format!("{:02X} {:02X}", mem.get(addr), mem.get(addr+1)),
-				3 => format!("{:02X} {:02X} {:02X}", mem.get(addr), mem.get(addr+1), mem.get(addr+2)),
-				4 => format!("{:02X} {:02X} {:02X} {:02X}", mem.get(addr), mem.get(addr+1), mem.get(addr+2), mem.get(addr+3)),
-				_ => unreachable!(),
-			}
-		}
 		// Read and parse next opcode
 		let old_pc = self.pc;
 		match self.next_instruction(mem) {
@@ -767,13 +756,13 @@ impl CPU<u16> for Mos6502 {
 				let new_pc = self.pc;
 				instruction.execute(self, mem, &operand);
 				debug!("mos6502: {:04X}  {:-8s}  {:-3s} {:-26s}  -[{:u}]-> AC:{:02X} X:{:02X} Y:{:02X} SR:{:02X} SP:{:02X} NV-BDIZC:{:08t}",
-					old_pc, hexdump(mem, old_pc, new_pc), instruction.as_str(), operand.as_str(),
+					old_pc, mem.hexdump(old_pc, new_pc), instruction.as_str(), operand.as_str(),
 					cycles, self.ac, self.x, self.y, self.sr, self.sp, self.sr);
 				cycles
 			},
 			// Got illegal opcode
 			None => {
-				debug!("mos6502: {:04X}  {:-8s}  ???", old_pc, hexdump(mem, old_pc, old_pc+3));
+				debug!("mos6502: {:04X}  {:-8s}  ???", old_pc, mem.hexdump(old_pc, old_pc+3));
 				fail!("mos6502: Illegal opcode ${:02X} at ${:04X}", mem.get(old_pc), old_pc)
 			},
 		}
