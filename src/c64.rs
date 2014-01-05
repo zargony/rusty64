@@ -66,15 +66,16 @@ impl Addressable<u16> for C64Memory {
 
 
 pub struct C64 {
-	priv cpu: Mos6510,
+	priv cpu: Mos6510<SharedMemory<C64Memory>>,
 	priv mem: SharedMemory<C64Memory>,
 }
 
 impl C64 {
 	pub fn new () -> C64 {
+		let mem = SharedMemory::new(C64Memory::new());
 		C64 {
-			cpu: Mos6510::new(),
-			mem: SharedMemory::new(C64Memory::new()),
+			cpu: Mos6510::new(mem.clone()),
+			mem: mem,
 		}
 	}
 
