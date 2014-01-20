@@ -7,10 +7,10 @@ pub struct SharedMemory<M> {
 	priv mem: Rc<RefCell<M>>,
 }
 
-impl<A: Addr, M: Addressable<A> + Freeze> SharedMemory<M> {
+impl<A: Addr, M: Addressable<A>> SharedMemory<M> {
 	/// Create new shared memory of the given memory object
 	pub fn new (mem: M) -> SharedMemory<M> {
-		SharedMemory { mem: Rc::from_mut(RefCell::new(mem)) }
+		SharedMemory { mem: Rc::new(RefCell::new(mem)) }
 	}
 }
 
