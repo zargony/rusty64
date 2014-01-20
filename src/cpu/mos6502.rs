@@ -1,3 +1,4 @@
+use std::mem::size_of;
 use mem::Addressable;
 use super::cpu::CPU;
 
@@ -464,7 +465,7 @@ impl<M: Addressable<u16>> Mos6502<M> {
 	/// Get the memory contents at the current PC and advance the PC
 	fn next<T: Primitive> (&mut self) -> T {
 		let val = self.mem.get_le(self.pc);
-		self.pc += Primitive::bytes(None::<T>) as u16;
+		self.pc += size_of::<T>() as u16;
 		val
 	}
 
@@ -665,7 +666,7 @@ impl<M: Addressable<u16>> Mos6502<M> {
 		// SP points to the next free stack position as $0100+SP. SP needs to be
 		// initialized to #$FF by the reset code. As the stack grows, SP decreases
 		// down to #$00 (i.e. stack full). Stack access never leaves the stack page!
-		self.sp -= Primitive::bytes(None::<T>) as u8;
+		self.sp -= size_of::<T>() as u8;
 		self.mem.set_le_masked(0x0100 + (self.sp + 1) as u16, 0x00ff, value);
 	}
 
@@ -673,7 +674,7 @@ impl<M: Addressable<u16>> Mos6502<M> {
 	fn pop<T: Primitive> (&mut self) -> T {
 		// See push() for details
 		let value: T = self.mem.get_le_masked(0x0100 + (self.sp + 1) as u16, 0x00ff);
-		self.sp += Primitive::bytes(None::<T>) as u8;
+		self.sp += size_of::<T>() as u8;
 		value
 	}
 
