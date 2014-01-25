@@ -1,12 +1,12 @@
 use std::{fmt, num, vec};
 use std::mem::size_of;
-use std::num::Bitwise;
+use std::num::{Bitwise, Zero};
 
 /// A trait for all addresses
 pub trait Addr: Int + Unsigned + fmt::UpperHex {
 	/// Calculate new address with given offset
 	fn offset<T: Integer+Signed+NumCast> (&self, offset: T) -> Self {
-		if offset.is_negative() {
+		if offset < Zero::zero() {
 			self - num::cast(offset.abs()).unwrap()
 		} else {
 			self + num::cast(offset).unwrap()
