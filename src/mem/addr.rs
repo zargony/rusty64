@@ -1,4 +1,4 @@
-use std::{fmt, num, vec};
+use std::{fmt, num};
 use std::mem::size_of;
 use std::num::{Bitwise, Zero};
 
@@ -26,40 +26,32 @@ impl Addr for u16 { }
 impl Addr for u32 { }
 impl Addr for u64 { }
 
-/// Create a number from the given byte iterator in big endian order
-/// FIXME: This should actually take an Iterator<&'a u8>
-fn number_from_bytes<I: Iterator<u8>, T: Primitive> (mut it: I) -> T {
-	let val = it.fold(0u64, |v, b| (v << 8) + b as u64);
-	if Primitive::is_signed(None::<T>) {
-		let shift = 64 - 8*size_of::<T>();
-		num::cast((val << shift) as i64 >> shift).unwrap()
-	} else {
-		num::cast(val).unwrap()
+/// Create a number from bytes in big endian order
+fn number_from_be_bytes<T: Primitive> (f: |uint| -> u8) -> T {
+	number_from_le_bytes(|i| f(size_of::<T>()-i-1))
+}
+
+/// Create a number from bytes in little endian order
+fn number_from_le_bytes<T: Primitive> (f: |uint| -> u8) -> T {
+	let mut val: T = Zero::zero();
+	let ptr = &mut val as *mut T as *mut u8;
+	for i in range(0, size_of::<T>()) {
+		unsafe { *(ptr.offset(i as int)) = f(i); }
 	}
+	val
 }
 
-/// Create a number from the given bytes in big endian order
-fn number_from_be_bytes<T: Primitive> (data: &[u8]) -> T {
-	number_from_bytes(data.iter().map(|b| *b))
+/// Convert a number to bytes in big endian order
+fn number_to_be_bytes<T: Primitive> (val: T, f: |uint, u8|) {
+	number_to_le_bytes(val, |i, b| f(size_of::<T>()-i-1, b))
 }
 
-/// Create a number from the given bytes in little endian order
-fn number_from_le_bytes<T: Primitive> (data: &[u8]) -> T {
-	number_from_bytes(data.rev_iter().map(|b| *b))
-}
-
-/// Convert a given number to bytes in big endian order
-fn number_to_be_bytes<T: Primitive, U> (val: T, f: |&[u8]| -> U) -> U {
-	let size = size_of::<T>();
+/// Convert a number to bytes in little endian order
+fn number_to_le_bytes<T: Primitive> (val: T, f: |uint, u8|) {
 	let ptr = &val as *T as *u8;
-	f(vec::from_fn(size, |i| unsafe { *ptr.offset((size - i - 1) as int) }))
-}
-
-/// Convert a given number to bytes in little endian order
-fn number_to_le_bytes<T: Primitive, U> (val: T, f: |&[u8]| -> U) -> U {
-	let size = size_of::<T>();
-	let ptr = &val as *T as *u8;
-	unsafe { vec::raw::buf_as_slice(ptr, size, f) }
+	for i in range(0, size_of::<T>()) {
+		unsafe { f(i, *(ptr.offset(i as int))); }
+	}
 }
 
 /// A trait for anything that has an address bus and can get/set data. The
@@ -72,26 +64,22 @@ pub trait Addressable<A: Addr> {
 
 	/// Get a number in big endian format from the given address
 	fn get_be<T: Primitive> (&self, addr: A) -> T {
-		let data = vec::from_fn(size_of::<T>(), |i| self.get(addr.offset(i as int)));
-		number_from_be_bytes(data)
+		number_from_be_bytes(|i| self.get(addr.offset(i as int)))
 	}
 
 	/// Get a number in big endian format from the given masked address
 	fn get_be_masked<T: Primitive> (&self, addr: A, mask: A) -> T {
-		let data = vec::from_fn(size_of::<T>(), |i| self.get(addr.offset_masked(i as int, mask.clone())));
-		number_from_be_bytes(data)
+		number_from_be_bytes(|i| self.get(addr.offset_masked(i as int, mask.clone())))
 	}
 
 	/// Get a number in little endian format from the given address
 	fn get_le<T: Primitive> (&self, addr: A) -> T {
-		let data = vec::from_fn(size_of::<T>(), |i| self.get(addr.offset(i as int)));
-		number_from_le_bytes(data)
+		number_from_le_bytes(|i| self.get(addr.offset(i as int)))
 	}
 
 	/// Get a number in little endian format from the given masked address
 	fn get_le_masked<T: Primitive> (&self, addr: A, mask: A) -> T {
-		let data = vec::from_fn(size_of::<T>(), |i| self.get(addr.offset_masked(i as int, mask.clone())));
-		number_from_le_bytes(data)
+		number_from_le_bytes(|i| self.get(addr.offset_masked(i as int, mask.clone())))
 	}
 
 	/// Memory write: set the data at the given address
@@ -99,38 +87,22 @@ pub trait Addressable<A: Addr> {
 
 	/// Store a number in big endian format to the given address
 	fn set_be<T: Primitive> (&mut self, addr: A, val: T) {
-		number_to_be_bytes(val, |data| {
-			for (i, &b) in data.iter().enumerate() {
-				self.set(addr.offset(i as int), b);
-			}
-		});
+		number_to_be_bytes(val, |i, b| self.set(addr.offset(i as int), b));
 	}
 
 	/// Store a number in big endian format to the given masked address
 	fn set_be_masked<T: Primitive> (&mut self, addr: A, mask: A, val: T) {
-		number_to_be_bytes(val, |data| {
-			for (i, &b) in data.iter().enumerate() {
-				self.set(addr.offset_masked(i as int, mask.clone()), b);
-			}
-		});
+		number_to_be_bytes(val, |i, b| self.set(addr.offset_masked(i as int, mask.clone()), b));
 	}
 
 	/// Store a number in little endian format to the given address
 	fn set_le<T: Primitive> (&mut self, addr: A, val: T) {
-		number_to_le_bytes(val, |data| {
-			for (i, &b) in data.iter().enumerate() {
-				self.set(addr.offset(i as int), b);
-			}
-		});
+		number_to_le_bytes(val, |i, b| self.set(addr.offset(i as int), b));
 	}
 
 	/// Store a number in little endian format to the given masked address
 	fn set_le_masked<T: Primitive> (&mut self, addr: A, mask: A, val: T) {
-		number_to_le_bytes(val, |data| {
-			for (i, &b) in data.iter().enumerate() {
-				self.set(addr.offset_masked(i as int, mask.clone()), b);
-			}
-		});
+		number_to_le_bytes(val, |i, b| self.set(addr.offset_masked(i as int, mask.clone()), b));
 	}
 
 	// Build a hexdump string of the given address range
@@ -149,6 +121,7 @@ pub trait Addressable<A: Addr> {
 
 #[cfg(test)]
 mod test {
+	use std::vec;
 	use super::{number_from_be_bytes, number_from_le_bytes};
 	use super::{number_to_be_bytes, number_to_le_bytes};
 	use super::{Addr, Addressable};
@@ -169,60 +142,62 @@ mod test {
 		assert_eq!(0x1300_u16.offset_masked(-1, 0x00ff), 0x13ff_u16);
 	}
 
+	fn test_convert_from_bytes<T: Primitive> (convert: |f: |uint| -> u8| -> T, val: T, data: &[u8]) {
+		assert_eq!(val, convert(|i| data[i]));
+	}
+
 	#[test]
 	fn convert_from_big_endian () {
-		assert_eq!(       0x12_u8 , number_from_be_bytes(&[0x12]));
-		assert_eq!(       0x98_u8 , number_from_be_bytes(&[0x98]));
-		assert_eq!( 0x12345678_u32, number_from_be_bytes(&[0x12, 0x34, 0x56, 0x78]));
-		assert_eq!( 0x98765432_u32, number_from_be_bytes(&[0x98, 0x76, 0x54, 0x32]));
-		assert_eq!(       0x12_i8 , number_from_be_bytes(&[0x12]));
-		assert_eq!(      -0x68_i8 , number_from_be_bytes(&[0x98]));
-		assert_eq!( 0x12345678_i32, number_from_be_bytes(&[0x12, 0x34, 0x56, 0x78]));
-		assert_eq!(-0x6789abce_i32, number_from_be_bytes(&[0x98, 0x76, 0x54, 0x32]));
-		assert_eq!(     0x9876_u32, number_from_be_bytes(&[0x98, 0x76]));
-		assert_eq!(     0x9876_i32, number_from_be_bytes(&[0x98, 0x76]));
+		test_convert_from_bytes(number_from_be_bytes,        0x12_u8 , [0x12]                  );
+		test_convert_from_bytes(number_from_be_bytes,        0x98_u8 , [0x98]                  );
+		test_convert_from_bytes(number_from_be_bytes,  0x12345678_u32, [0x12, 0x34, 0x56, 0x78]);
+		test_convert_from_bytes(number_from_be_bytes,  0x98765432_u32, [0x98, 0x76, 0x54, 0x32]);
+		test_convert_from_bytes(number_from_be_bytes,        0x12_i8 , [0x12]                  );
+		test_convert_from_bytes(number_from_be_bytes,       -0x68_i8 , [0x98]                  );
+		test_convert_from_bytes(number_from_be_bytes,  0x12345678_i32, [0x12, 0x34, 0x56, 0x78]);
+		test_convert_from_bytes(number_from_be_bytes, -0x6789abce_i32, [0x98, 0x76, 0x54, 0x32]);
 	}
 
 	#[test]
 	fn convert_from_little_endian () {
-		assert_eq!(       0x12_u8 , number_from_le_bytes(&[0x12]));
-		assert_eq!(       0x98_u8 , number_from_le_bytes(&[0x98]));
-		assert_eq!( 0x12345678_u32, number_from_le_bytes(&[0x78, 0x56, 0x34, 0x12]));
-		assert_eq!( 0x98765432_u32, number_from_le_bytes(&[0x32, 0x54, 0x76, 0x98]));
-		assert_eq!(       0x12_i8 , number_from_le_bytes(&[0x12]));
-		assert_eq!(      -0x68_i8 , number_from_le_bytes(&[0x98]));
-		assert_eq!( 0x12345678_i32, number_from_le_bytes(&[0x78, 0x56, 0x34, 0x12]));
-		assert_eq!(-0x6789abce_i32, number_from_le_bytes(&[0x32, 0x54, 0x76, 0x98]));
-		assert_eq!(     0x9876_u32, number_from_le_bytes(&[0x76, 0x98]));
-		assert_eq!(     0x9876_i32, number_from_le_bytes(&[0x76, 0x98]));
+		test_convert_from_bytes(number_from_le_bytes,        0x12_u8 , [0x12]                  );
+		test_convert_from_bytes(number_from_le_bytes,        0x98_u8 , [0x98]                  );
+		test_convert_from_bytes(number_from_le_bytes,  0x12345678_u32, [0x78, 0x56, 0x34, 0x12]);
+		test_convert_from_bytes(number_from_le_bytes,  0x98765432_u32, [0x32, 0x54, 0x76, 0x98]);
+		test_convert_from_bytes(number_from_le_bytes,        0x12_i8 , [0x12]                  );
+		test_convert_from_bytes(number_from_le_bytes,       -0x68_i8 , [0x98]                  );
+		test_convert_from_bytes(number_from_le_bytes,  0x12345678_i32, [0x78, 0x56, 0x34, 0x12]);
+		test_convert_from_bytes(number_from_le_bytes, -0x6789abce_i32, [0x32, 0x54, 0x76, 0x98]);
+	}
+
+	fn test_convert_to_bytes<T: Primitive> (convert: |T, |uint, u8||, val: T, data: &[u8]) {
+		let mut d = vec::from_elem(data.len(), 0u8);
+		convert(val, |i, b| d[i] = b);
+		assert_eq!(d.as_slice(), data);
 	}
 
 	#[test]
 	fn convert_to_big_endian () {
-		number_to_be_bytes(       0x12_u8 , |data| assert_eq!(data, [0x12]));
-		number_to_be_bytes(       0x98_u8 , |data| assert_eq!(data, [0x98]));
-		number_to_be_bytes( 0x12345678_u32, |data| assert_eq!(data, [0x12, 0x34, 0x56, 0x78]));
-		number_to_be_bytes( 0x98765432_u32, |data| assert_eq!(data, [0x98, 0x76, 0x54, 0x32]));
-		number_to_be_bytes(       0x12_i8 , |data| assert_eq!(data, [0x12]));
-		number_to_be_bytes(      -0x68_i8 , |data| assert_eq!(data, [0x98]));
-		number_to_be_bytes( 0x12345678_i32, |data| assert_eq!(data, [0x12, 0x34, 0x56, 0x78]));
-		number_to_be_bytes(-0x6789abce_i32, |data| assert_eq!(data, [0x98, 0x76, 0x54, 0x32]));
-		number_to_be_bytes(     0x9876_u32, |data| assert_eq!(data, [0x00, 0x00, 0x98, 0x76]));
-		number_to_be_bytes(     0x9876_i32, |data| assert_eq!(data, [0x00, 0x00, 0x98, 0x76]));
+		test_convert_to_bytes(number_to_be_bytes,        0x12_u8 , [0x12]                  );
+		test_convert_to_bytes(number_to_be_bytes,        0x98_u8 , [0x98]                  );
+		test_convert_to_bytes(number_to_be_bytes,  0x12345678_u32, [0x12, 0x34, 0x56, 0x78]);
+		test_convert_to_bytes(number_to_be_bytes,  0x98765432_u32, [0x98, 0x76, 0x54, 0x32]);
+		test_convert_to_bytes(number_to_be_bytes,        0x12_i8 , [0x12]                  );
+		test_convert_to_bytes(number_to_be_bytes,       -0x68_i8 , [0x98]                  );
+		test_convert_to_bytes(number_to_be_bytes,  0x12345678_i32, [0x12, 0x34, 0x56, 0x78]);
+		test_convert_to_bytes(number_to_be_bytes, -0x6789abce_i32, [0x98, 0x76, 0x54, 0x32]);
 	}
 
 	#[test]
 	fn convert_to_little_endian () {
-		number_to_le_bytes(       0x12_u8 , |data| assert_eq!(data, [0x12]));
-		number_to_le_bytes(       0x98_u8 , |data| assert_eq!(data, [0x98]));
-		number_to_le_bytes( 0x12345678_u32, |data| assert_eq!(data, [0x78, 0x56, 0x34, 0x12]));
-		number_to_le_bytes( 0x98765432_u32, |data| assert_eq!(data, [0x32, 0x54, 0x76, 0x98]));
-		number_to_le_bytes(       0x12_i8 , |data| assert_eq!(data, [0x12]));
-		number_to_le_bytes(      -0x68_i8 , |data| assert_eq!(data, [0x98]));
-		number_to_le_bytes( 0x12345678_i32, |data| assert_eq!(data, [0x78, 0x56, 0x34, 0x12]));
-		number_to_le_bytes(-0x6789abce_i32, |data| assert_eq!(data, [0x32, 0x54, 0x76, 0x98]));
-		number_to_le_bytes(     0x9876_u32, |data| assert_eq!(data, [0x76, 0x98, 0x00, 0x00]));
-		number_to_le_bytes(     0x9876_i32, |data| assert_eq!(data, [0x76, 0x98, 0x00, 0x00]));
+		test_convert_to_bytes(number_to_le_bytes,        0x12_u8 , [0x12]                  );
+		test_convert_to_bytes(number_to_le_bytes,        0x98_u8 , [0x98]                  );
+		test_convert_to_bytes(number_to_le_bytes,  0x12345678_u32, [0x78, 0x56, 0x34, 0x12]);
+		test_convert_to_bytes(number_to_le_bytes,  0x98765432_u32, [0x32, 0x54, 0x76, 0x98]);
+		test_convert_to_bytes(number_to_le_bytes,        0x12_i8 , [0x12]                  );
+		test_convert_to_bytes(number_to_le_bytes,       -0x68_i8 , [0x98]                  );
+		test_convert_to_bytes(number_to_le_bytes,  0x12345678_i32, [0x78, 0x56, 0x34, 0x12]);
+		test_convert_to_bytes(number_to_le_bytes, -0x6789abce_i32, [0x32, 0x54, 0x76, 0x98]);
 	}
 
 	struct DummyData;
