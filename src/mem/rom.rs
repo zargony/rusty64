@@ -39,6 +39,7 @@ impl<A: Addr> Addressable<A> for Rom<A> {
 
 #[cfg(test)]
 mod test {
+	use super::super::Addressable;
 	use super::Rom;
 
 	#[test]

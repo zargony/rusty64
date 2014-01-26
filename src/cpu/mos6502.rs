@@ -775,6 +775,7 @@ impl<M: Addressable<u16>> CPU for Mos6502<M> {
 #[cfg(test)]
 mod test {
 	use mem::{Addressable, Ram, Rom};
+	use super::super::cpu::CPU;
 	use super::LDA;
 	use super::{Immediate, Accumulator, Relative, Absolute, AbsoluteIndexedWithX, AbsoluteIndexedWithY, Indirect};
 	use super::{ZeroPage, ZeroPageIndexedWithX, ZeroPageIndexedWithY, ZeroPageIndexedWithXIndirect, ZeroPageIndirectIndexedWithY};

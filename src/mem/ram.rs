@@ -42,6 +42,7 @@ impl<A: Addr> Addressable<A> for Ram<A> {
 
 #[cfg(test)]
 mod test {
+	use super::super::Addressable;
 	use super::Ram;
 
 	#[test]
