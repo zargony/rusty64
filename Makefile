@@ -29,8 +29,8 @@ $(patsubst %,build/%,$(TARGETS)): build/%: src/bin.rs sdl2/build/lib/$(LIBSDL2)
 
 -include $(patsubst %,build/%.d,$(TARGETS))
 
-build/test: src/test.rs
+build/test: src/test.rs sdl2/build/lib/$(LIBSDL2)
 	mkdir -p build
-	$(RUSTC) $(RUSTFLAGS) --dep-info --test -o $@ $<
+	$(RUSTC) $(RUSTFLAGS) --dep-info -L sdl2/build/lib --test -o $@ $<
 
 -include build/test.d
