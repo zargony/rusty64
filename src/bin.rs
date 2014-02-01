@@ -2,12 +2,20 @@
 #[copyright = "Andreas Neuhaus <info@zargony.com>"];
 #[license = "MIT"];
 
+extern mod native;
+
 use cpu::Mos6510;
 use mem::{Addressable, Ram, Rom, SharedMemory};
 
 mod cpu;
 mod mem;
 mod ui;
+
+#[start]
+fn start (argc: int, argv: **u8) -> int {
+	// Ensure that main is started on the native main os thread (required for SDL2)
+	native::start(argc, argv, main)
+}
 
 fn main () {
 	let mut c64 = C64::new();
