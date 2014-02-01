@@ -1,7 +1,7 @@
 RUSTC ?= rustc
 RUSTFLAGS ?= -O --cfg ndebug
 
-TARGETS := $(filter-out test,$(patsubst src/%.rs,%,$(wildcard src/*.rs)))
+TARGETS := c64
 
 LIBSDL2 := libsdl2-16412a49-0.0.1.rlib
 
@@ -23,9 +23,9 @@ clean:
 sdl2/build/lib/$(LIBSDL2):
 	$(MAKE) -C sdl2 build/tmp/libsdl2.dummy
 
-$(patsubst %,build/%,$(TARGETS)): build/%: src/%.rs sdl2/build/lib/$(LIBSDL2)
+$(patsubst %,build/%,$(TARGETS)): build/%: src/bin.rs sdl2/build/lib/$(LIBSDL2)
 	mkdir -p build
-	$(RUSTC) $(RUSTFLAGS) --dep-info -L sdl2/build/lib --bin -o $@ $<
+	$(RUSTC) $(RUSTFLAGS) --dep-info build/$*.d -L sdl2/build/lib --cfg $* --bin -o $@ $<
 
 -include $(patsubst %,build/%.d,$(TARGETS))
 

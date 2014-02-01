@@ -4,16 +4,11 @@
 
 extern mod sdl2;
 
-use cpu::cpu::CPU;
-use cpu::mos6510::Mos6510;
+use cpu::Mos6510;
 use mem::{Addressable, Ram, Rom, SharedMemory};
 
-pub mod cpu {
-	pub mod cpu;
-	pub mod mos6502;
-	pub mod mos6510;
-}
-pub mod mem;
+mod cpu;
+mod mem;
 
 fn main () {
 	let mut c64 = C64::new();
