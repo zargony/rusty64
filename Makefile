@@ -3,6 +3,8 @@ RUSTFLAGS ?= -O --cfg ndebug
 
 TARGETS := $(filter-out test,$(patsubst src/%.rs,%,$(wildcard src/*.rs)))
 
+LIBSDL2 := libsdl2-16412a49-0.0.1.rlib
+
 all: $(TARGETS)
 
 $(TARGETS): %: build/%
@@ -14,13 +16,16 @@ check: build/test
 	$<
 
 clean:
-	rm -rf build
+	rm -rf build sdl2/build
 
 .PHONY: all $(TARGETS) run check clean
 
-$(patsubst %,build/%,$(TARGETS)): build/%: src/%.rs
+sdl2/build/lib/$(LIBSDL2):
+	$(MAKE) -C sdl2 build/tmp/libsdl2.dummy
+
+$(patsubst %,build/%,$(TARGETS)): build/%: src/%.rs sdl2/build/lib/$(LIBSDL2)
 	mkdir -p build
-	$(RUSTC) $(RUSTFLAGS) --dep-info --bin -o $@ $<
+	$(RUSTC) $(RUSTFLAGS) --dep-info -L sdl2/build/lib --bin -o $@ $<
 
 -include $(patsubst %,build/%.d,$(TARGETS))
 

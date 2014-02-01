@@ -2,6 +2,8 @@
 #[copyright = "Andreas Neuhaus <info@zargony.com>"];
 #[license = "MIT"];
 
+extern mod sdl2;
+
 use cpu::cpu::CPU;
 use cpu::mos6510::Mos6510;
 use mem::{Addressable, Ram, Rom, SharedMemory};
