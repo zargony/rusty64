@@ -1055,10 +1055,10 @@ mod test {
 		let rom: Rom<u16> = Rom::new(&Path::new("test/ttl6502_v10.rom"));
 		for i in range(0_u16, rom.size() as u16) { cpu.mem.set(i + 0xe000, rom.get(i)); }
 		cpu.reset();
-		3000.times(|| {
+		for _ in range(0, 3000) {
 			cpu.step();
 			if cpu.pc == 0xf5b6 { cpu.pc = 0xf5e6; }		// TODO: This skips decimal mode tests for now
-		});
+		}
 		let status = cpu.mem.get(0x0003);
 		assert!(status == 0xfe, format!("stopped at ${:04X} with status ${:02X}", cpu.pc, status));
 	}
