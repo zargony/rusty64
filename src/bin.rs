@@ -2,13 +2,12 @@
 #[copyright = "Andreas Neuhaus <info@zargony.com>"];
 #[license = "MIT"];
 
-extern mod sdl2;
-
 use cpu::Mos6510;
 use mem::{Addressable, Ram, Rom, SharedMemory};
 
 mod cpu;
 mod mem;
+mod ui;
 
 fn main () {
 	let mut c64 = C64::new();
