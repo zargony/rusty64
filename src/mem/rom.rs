@@ -11,9 +11,9 @@ pub struct Rom<A> {
 impl<A: Addr> Rom<A> {
 	/// Create new ROM with contents of the given file
 	pub fn new (path: &Path) -> Rom<A> {
-		let filename = os::self_exe_path().unwrap().join(Path::new("../share")).join(path);
+		let filename = os::self_exe_path().unwrap().join("../share").join(path);
 		info!("rom: Loading ROM from {}", filename.display());
-		let data = File::open(&filename).read_to_end();
+		let data = File::open(&filename).read_to_end().unwrap();
 		let last_addr: A = num::cast(data.len() - 1).unwrap();
 		Rom { data: data, last_addr: last_addr }
 	}
