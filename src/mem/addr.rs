@@ -5,7 +5,7 @@ use std::num::{Bitwise, Zero};
 /// A trait for all addresses
 pub trait Addr: Int + Unsigned + fmt::UpperHex {
 	/// Calculate new address with given offset
-	fn offset<T: Integer+Signed+NumCast> (&self, offset: T) -> Self {
+	fn offset<T: Int+Signed+NumCast> (&self, offset: T) -> Self {
 		if offset < Zero::zero() {
 			self - num::cast(offset.abs()).unwrap()
 		} else {
@@ -14,7 +14,7 @@ pub trait Addr: Int + Unsigned + fmt::UpperHex {
 	}
 
 	/// Calculate new address with given offset only changing the masked part of the address
-	fn offset_masked<T: Integer+Signed+Bitwise+NumCast> (&self, offset: T, mask: Self) -> Self {
+	fn offset_masked<T: Int+Signed+NumCast+Bitwise> (&self, offset: T, mask: Self) -> Self {
 		(self & !mask) | (self.offset(offset) & mask)
 	}
 }

@@ -648,7 +648,7 @@ impl<M: Addressable<u16>> Mos6502<M> {
 	/// Set the given status flag to the given state
 	fn set_flag (&mut self, flag: StatusFlag, state: bool) {
 		if state {
-			self.sr |= (1 << flag as u8);
+			self.sr |= 1 << flag as u8;
 		} else {
 			self.sr &= !(1 << flag as u8);
 		}

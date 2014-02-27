@@ -1,1 +1,1 @@
-extern mod sdl2;
+extern crate sdl2;
