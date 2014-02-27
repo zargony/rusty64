@@ -19,6 +19,7 @@ impl<A: Addr> Rom<A> {
 	}
 
 	/// Returns the size of the ROM
+	#[allow(dead_code)]
 	pub fn size (&self) -> uint {
 		self.data.len()
 	}

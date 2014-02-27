@@ -2,7 +2,7 @@
 #[copyright = "Andreas Neuhaus <info@zargony.com>"];
 #[license = "MIT"];
 
-extern mod native;
+extern crate native;
 
 use cpu::Mos6510;
 use mem::{Addressable, Ram, Rom, SharedMemory};

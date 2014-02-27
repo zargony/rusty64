@@ -20,6 +20,7 @@ impl<A: Addr> Ram<A> {
 	}
 
 	/// Returns the size of the RAM
+	#[allow(dead_code)]
 	pub fn size (&self) -> uint {
 		self.data.len()
 	}
