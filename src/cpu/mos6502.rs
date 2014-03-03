@@ -1,3 +1,4 @@
+use std::fmt;
 use std::mem::size_of;
 use mem::Addressable;
 use super::cpu::CPU;
@@ -325,10 +326,11 @@ impl Instruction {
 			},
 		}
 	}
+}
 
-	/// Returns a printable instruction mnemonic
-	fn as_str (&self) -> &'static str {
-		match *self {
+impl fmt::Show for Instruction {
+	fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
+		f.pad(match *self {
 			LDA => "LDA", LDX => "LDX", LDY => "LDY", STA => "STA", STX => "STX", STY => "STY",
 			TAX => "TAX", TAY => "TAY", TXA => "TXA", TYA => "TYA",
 			TSX => "TSX", TXS => "TXS", PHA => "PHA", PHP => "PHP", PLA => "PLA", PLP => "PLP",
@@ -340,7 +342,7 @@ impl Instruction {
 			BCC => "BCC", BCS => "BCS", BEQ => "BEQ", BMI => "BMI", BNE => "BNE", BPL => "BPL", BVC => "BVC", BVS => "BVS",
 			CLC => "CLC", CLD => "CLD", CLI => "CLI", CLV => "CLV", SEC => "SEC", SED => "SED", SEI => "SEI",
 			BRK => "BRK", NOP => "NOP", RTI => "RTI",
-		}
+		})
 	}
 }
 
@@ -403,10 +405,11 @@ impl Operand {
 			op									=> { let addr = op.addr(cpu); cpu.mem.set(addr, value); },
 		}
 	}
+}
 
-	/// Returns a printable operand mnemonic
-	fn as_str (&self) -> ~str {
-		match *self {
+impl fmt::Show for Operand {
+	fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
+		f.pad(match *self {
 			Implied								=> ~"",
 			Immediate(value)					=> format!("\\#${:02X}", value),
 			Accumulator							=> ~"A",
@@ -420,7 +423,7 @@ impl Operand {
 			ZeroPageIndexedWithY(addr)			=> format!("${:02X},Y", addr),
 			ZeroPageIndexedWithXIndirect(addr)	=> format!("(${:02X},X)", addr),
 			ZeroPageIndirectIndexedWithY(addr)	=> format!("(${:02X}),Y", addr),
-		}
+		})
 	}
 }
 
@@ -757,8 +760,8 @@ impl<M: Addressable<u16>> CPU for Mos6502<M> {
 			Some((cycles, instruction, operand)) => {
 				let new_pc = self.pc;
 				instruction.execute(self, &operand);
-				debug!("mos6502: {:04X}  {:-8s}  {:-3s} {:-26s}  -[{:u}]-> AC:{:02X} X:{:02X} Y:{:02X} SR:{:02X} SP:{:02X} NV-BDIZC:{:08t}",
-					old_pc, self.mem.hexdump(old_pc, new_pc), instruction.as_str(), operand.as_str(),
+				debug!("mos6502: {:04X}  {:-8s}  {:-3} {:-26}  -[{:u}]-> AC:{:02X} X:{:02X} Y:{:02X} SR:{:02X} SP:{:02X} NV-BDIZC:{:08t}",
+					old_pc, self.mem.hexdump(old_pc, new_pc), instruction, operand,
 					cycles, self.ac, self.x, self.y, self.sr, self.sp, self.sr);
 				cycles
 			},

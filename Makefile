@@ -3,7 +3,7 @@ RUSTFLAGS ?= -O --cfg ndebug
 
 TARGETS := c64
 
-LIBSDL2 := libsdl2-16412a49-0.0.1.rlib
+LIBSDL2 := libsdl2-79c1f430-0.0.1.rlib
 
 all: $(TARGETS)
 

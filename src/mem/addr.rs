@@ -121,7 +121,7 @@ pub trait Addressable<A: Addr> {
 
 #[cfg(test)]
 mod test {
-	use std::vec;
+	use std::{fmt, vec};
 	use super::{number_from_be_bytes, number_from_le_bytes};
 	use super::{number_to_be_bytes, number_to_le_bytes};
 	use super::{Addr, Addressable};
@@ -142,7 +142,7 @@ mod test {
 		assert_eq!(0x1300_u16.offset_masked(-1, 0x00ff), 0x13ff_u16);
 	}
 
-	fn test_convert_from_bytes<T: Primitive> (convert: |f: |uint| -> u8| -> T, val: T, data: &[u8]) {
+	fn test_convert_from_bytes<T: Primitive+fmt::Show> (convert: |f: |uint| -> u8| -> T, val: T, data: &[u8]) {
 		assert_eq!(val, convert(|i| data[i]));
 	}
 
