@@ -42,6 +42,7 @@ struct CpuMemory {
 }
 
 impl CpuMemory {
+	/// Create a new CPU memory
 	fn new () -> CpuMemory {
 		CpuMemory {
 			ram: SharedMemory::new(Ram::new()),
@@ -72,9 +73,9 @@ impl Addressable<u16> for CpuMemory {
 		// TODO: Hardware cartridges can as well use /GAME and /EXROM
 		match (addr, self.charen, self.hiram, self.loram) {
 			(0xa000..0xbfff,     _, false, false) => self.basic.get(addr - 0xa000),				// #1,2
-			(0xd000..0xdfff, false, false,     _) => 0, // TODO: self.io.get(addr - 0xd000),	// #1,6
+			(0xd000..0xdfff, false, false,     _) |												// #1,6
 			(0xd000..0xdfff, false,  true, false) => 0, // TODO: self.io.get(addr - 0xd000),	// #3
-			(0xd000..0xdfff,  true, false,     _) => self.characters.get(addr - 0xd000),		// #2,7
+			(0xd000..0xdfff,  true, false,     _) |												// #2,7
 			(0xd000..0xdfff,  true,  true, false) => self.characters.get(addr - 0xd000),		// #4
 			(0xe000..0xffff,     _, false,     _) => self.kernal.get(addr - 0xe000),			// #1,6,2,7
 			_                                     => self.ram.get(addr),
@@ -84,7 +85,11 @@ impl Addressable<u16> for CpuMemory {
 	fn set (&mut self, addr: u16, data: u8) {
 		// Writing to an address will always store the data to RAM,
 		// no matter if an address is accessed that is mapped to ROM
-		self.ram.set(addr, data);
+		match (addr, self.charen, self.hiram, self.loram) {
+			(0xd000..0xdfff, false, false,     _) |												// #1,6
+			(0xd000..0xdfff, false,  true, false) => (), // self.io.set(addr - 0xd000, data),	// #3
+			_                                     => self.ram.set(addr, data),
+		}
 	}
 }
 
@@ -94,6 +99,7 @@ pub struct C64 {
 }
 
 impl C64 {
+	/// Create a new C64 emulator
 	pub fn new () -> C64 {
 		let mem = CpuMemory::new();
 		C64 {
@@ -101,6 +107,7 @@ impl C64 {
 		}
 	}
 
+	/// Run the C64 emulation
 	pub fn run (&mut self) {
 		// TODO
 	}
