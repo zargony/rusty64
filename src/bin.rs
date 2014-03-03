@@ -29,57 +29,75 @@ fn main () {
 // Details about the PLA: http://www.c64-wiki.de/index.php/PLA_(C64-Chip)
 // Even more PLA details: http://skoe.de/docs/c64-dissected/pla/c64_pla_dissected_r1.1_a4ss.pdf
 
-// 64K RAM (not every part is always accessible)
-// 8K BASIC ROM at $A000
-// 4K character ROM at $D000
-// 8K kernal ROM at $E000
-
-struct C64Memory {
-	ram: Ram<u16>,
-	kernal: Rom<u16>,
+/// Represents the memory as seen by the CPU (memory layout is based on the
+/// settings of bits 2..0 of the processor port (/CHAREN, /HIRAM and /LORAM)
+struct CpuMemory {
+	ram: SharedMemory<Ram<u16>>,
 	basic: Rom<u16>,
 	characters: Rom<u16>,
+	kernal: Rom<u16>,
+	charen: bool,
+	hiram: bool,
+	loram: bool,
 }
 
-impl C64Memory {
-	fn new () -> C64Memory {
-		C64Memory {
-			ram: Ram::new(),
-			kernal: Rom::new(&Path::new("c64/kernal.rom")),
+impl CpuMemory {
+	fn new () -> CpuMemory {
+		CpuMemory {
+			ram: SharedMemory::new(Ram::new()),
 			basic: Rom::new(&Path::new("c64/basic.rom")),
 			characters: Rom::new(&Path::new("c64/characters.rom")),
+			kernal: Rom::new(&Path::new("c64/kernal.rom")),
+			charen: false,
+			hiram: false,
+			loram: false,
 		}
 	}
 }
 
-impl Addressable<u16> for C64Memory {
+impl Addressable<u16> for CpuMemory {
 	fn get (&self, addr: u16) -> u8 {
-		match addr {
-			// TODO: Switch memory access based on LORAM/HIRAM/CHAREN
-			0xa000..0xbfff => self.basic.get(addr - 0xa000),
-			0xd000..0xdfff => self.characters.get(addr - 0xd000),
-			0xe000..0xffff => self.kernal.get(addr - 0xe000),
-			_              => self.ram.get(addr),
+		// Switch memory access based on processor port lines:
+		//
+		//    /CHAREN /HIRAM /LORAM $A000-$BFFF $D000-$DFFF $E000-$FFFF
+		// #1    1      1       1      BASIC        I/O        KERNAL
+		// #6    1      1       0       RAM         I/O        KERNAL
+		// #3    1      0       1       RAM         I/O         RAM
+		// #5    X      0       0       RAM         RAM         RAM
+		// #2    0      1       1      BASIC       CHARS       KERNAL
+		// #7    0      1       0       RAM        CHARS       KERNAL
+		// #4    0      0       1       RAM        CHARS        RAM
+		// #5    X      0       0       RAM         RAM         RAM
+		//
+		// TODO: Hardware cartridges can as well use /GAME and /EXROM
+		match (addr, self.charen, self.hiram, self.loram) {
+			(0xa000..0xbfff,     _, false, false) => self.basic.get(addr - 0xa000),				// #1,2
+			(0xd000..0xdfff, false, false,     _) => 0, // TODO: self.io.get(addr - 0xd000),	// #1,6
+			(0xd000..0xdfff, false,  true, false) => 0, // TODO: self.io.get(addr - 0xd000),	// #3
+			(0xd000..0xdfff,  true, false,     _) => self.characters.get(addr - 0xd000),		// #2,7
+			(0xd000..0xdfff,  true,  true, false) => self.characters.get(addr - 0xd000),		// #4
+			(0xe000..0xffff,     _, false,     _) => self.kernal.get(addr - 0xe000),			// #1,6,2,7
+			_                                     => self.ram.get(addr),
 		}
 	}
 
 	fn set (&mut self, addr: u16, data: u8) {
+		// Writing to an address will always store the data to RAM,
+		// no matter if an address is accessed that is mapped to ROM
 		self.ram.set(addr, data);
 	}
 }
 
 
 pub struct C64 {
-	priv cpu: Mos6510<SharedMemory<C64Memory>>,
-	priv mem: SharedMemory<C64Memory>,
+	priv cpu: Mos6510<CpuMemory>,
 }
 
 impl C64 {
 	pub fn new () -> C64 {
-		let mem = SharedMemory::new(C64Memory::new());
+		let mem = CpuMemory::new();
 		C64 {
-			cpu: Mos6510::new(mem.clone()),
-			mem: mem,
+			cpu: Mos6510::new(mem),
 		}
 	}
 
