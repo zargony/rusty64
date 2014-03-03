@@ -18,14 +18,14 @@ impl UI {
 
 	/// Runs the UI loop and the given closure. Must be called from
 	/// the main thread (SDL2 requirement)
-	pub fn run (&mut self, f: ||) {
+	pub fn run (&mut self, f: || -> bool) {
 		loop {
 			match sdl2::event::poll_event() {
 				sdl2::event::QuitEvent(..) => break,
 				sdl2::event::KeyDownEvent(_, _, sdl2::keycode::EscapeKey, _, _) => break,
 				_ => { },
 			}
-			f()
+			if !f() { break; }
 		}
 	}
 }
@@ -44,6 +44,6 @@ mod test {
 	#[test]
 	fn smoke () {
 		let mut ui = UI::new();
-		ui.run(|| { });
+		ui.run(|| { false });
 	}
 }
