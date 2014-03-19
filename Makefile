@@ -1,5 +1,9 @@
 RUSTC ?= rustc
+ifdef DEBUG
+RUSTFLAGS ?= -g
+else
 RUSTFLAGS ?= -O --cfg ndebug
+endif
 
 TARGETS := c64
 
