@@ -14,7 +14,7 @@ all: $(TARGETS)
 $(TARGETS): %: build/%
 
 run: build/$(firstword $(TARGETS))
-	$<
+	RUST_LOG=$(firstword $(TARGETS)) $<
 
 check: build/test
 	$<
