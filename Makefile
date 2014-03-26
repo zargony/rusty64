@@ -39,6 +39,6 @@ build/test: src/test.rs build/$(LIBSDL2)
 -include build/test.d
 
 build/$(LIBSDL2):
-	mkdir -p build
 	$(MAKE) -C vendor/sdl2 build/tmp/libsdl2.dummy
+	mkdir -p build
 	cp vendor/sdl2/build/lib/$(LIBSDL2) build/
