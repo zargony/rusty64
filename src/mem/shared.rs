@@ -16,11 +16,11 @@ impl<A: Addr, M: Addressable<A>> SharedMemory<M> {
 
 impl<A: Addr, M: Addressable<A>> Addressable<A> for SharedMemory<M> {
 	fn get (&self, addr: A) -> u8 {
-		self.mem.borrow().with(|mem| mem.get(addr.clone()))
+		self.mem.borrow().get(addr)
 	}
 
 	fn set (&mut self, addr: A, data: u8) {
-		self.mem.borrow().with_mut(|mem| mem.set(addr.clone(), data));
+		self.mem.borrow_mut().set(addr, data);
 	}
 }
 

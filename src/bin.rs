@@ -2,6 +2,10 @@
 #[copyright = "Andreas Neuhaus <info@zargony.com>"];
 #[license = "MIT"];
 
+#[feature(phase)];
+
+#[phase(link, syntax)]
+extern crate log;
 extern crate native;
 
 use cpu::Mos6510;

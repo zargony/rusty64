@@ -1,7 +1,7 @@
 // FIXME: UI is hard to test (and optional), so there are no tests yet
 #[allow(dead_code)];
 
-use std::vec;
+use std::slice;
 use super::sdl2::{pixels, render, video};
 
 /// A screen is a graphics window presented to the user
@@ -30,7 +30,7 @@ impl Screen {
 			Ok(texture) => texture,
 			Err(err) => fail!("ui: Failed to create SDL2 texture: {}", err),
 		};
-		let buffer = vec::from_elem(width * height, 0u32);
+		let buffer = slice::from_elem(width * height, 0u32);
 		Screen { width: width, height: height, renderer: renderer, texture: texture, buffer: buffer }
 	}
 
@@ -50,7 +50,7 @@ impl Screen {
 	/// Presents the current screen buffer to the user
 	pub fn present (&mut self) {
 		// Update the texture with the contents of the screen buffer
-		unsafe { vec::raw::buf_as_slice(self.buffer.as_ptr() as *u8, 4 * self.buffer.len(), |bytes| {
+		unsafe { slice::raw::buf_as_slice(self.buffer.as_ptr() as *u8, 4 * self.buffer.len(), |bytes| {
 			self.texture.update(None, bytes, 4 * self.width as int);
 		}); }
 		// Render the texture (stretching it to fill the render context)

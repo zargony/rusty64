@@ -3,19 +3,20 @@ use std::mem::size_of;
 use std::num::{Bitwise, Zero};
 
 /// A trait for all addresses
-pub trait Addr: Int + Unsigned + fmt::UpperHex {
+pub trait Addr: Unsigned + NumCast + Ord + Bitwise + Clone + fmt::UpperHex {
 	/// Calculate new address with given offset
-	fn offset<T: Int+Signed+NumCast> (&self, offset: T) -> Self {
-		if offset < Zero::zero() {
-			self - num::cast(offset.abs()).unwrap()
+	fn offset<T: Signed+NumCast> (&self, offset: T) -> Self {
+		if offset.is_negative() {
+			self.sub(&num::cast(offset.abs()).unwrap())		// self - abs(offset)
 		} else {
-			self + num::cast(offset).unwrap()
+			self.add(&num::cast(offset).unwrap())			// self + offset
 		}
 	}
 
 	/// Calculate new address with given offset only changing the masked part of the address
-	fn offset_masked<T: Int+Signed+NumCast+Bitwise> (&self, offset: T, mask: Self) -> Self {
-		(self & !mask) | (self.offset(offset) & mask)
+	fn offset_masked<T: Signed+NumCast+Bitwise> (&self, offset: T, mask: &Self) -> Self {
+		// (self & !mask) | (self.offset(offset) & mask)
+		self.bitand(&mask.not()).bitor(&self.offset(offset).bitand(mask))
 	}
 }
 
@@ -27,12 +28,12 @@ impl Addr for u32 { }
 impl Addr for u64 { }
 
 /// Create a number from bytes in big endian order
-fn number_from_be_bytes<T: Primitive> (f: |uint| -> u8) -> T {
+fn number_from_be_bytes<T: Num> (f: |uint| -> u8) -> T {
 	number_from_le_bytes(|i| f(size_of::<T>()-i-1))
 }
 
 /// Create a number from bytes in little endian order
-fn number_from_le_bytes<T: Primitive> (f: |uint| -> u8) -> T {
+fn number_from_le_bytes<T: Num> (f: |uint| -> u8) -> T {
 	let mut val: T = Zero::zero();
 	let ptr = &mut val as *mut T as *mut u8;
 	for i in range(0, size_of::<T>()) {
@@ -42,12 +43,12 @@ fn number_from_le_bytes<T: Primitive> (f: |uint| -> u8) -> T {
 }
 
 /// Convert a number to bytes in big endian order
-fn number_to_be_bytes<T: Primitive> (val: T, f: |uint, u8|) {
+fn number_to_be_bytes<T: Num> (val: T, f: |uint, u8|) {
 	number_to_le_bytes(val, |i, b| f(size_of::<T>()-i-1, b))
 }
 
 /// Convert a number to bytes in little endian order
-fn number_to_le_bytes<T: Primitive> (val: T, f: |uint, u8|) {
+fn number_to_le_bytes<T: Num> (val: T, f: |uint, u8|) {
 	let ptr = &val as *T as *u8;
 	for i in range(0, size_of::<T>()) {
 		unsafe { f(i, *(ptr.offset(i as int))); }
@@ -63,46 +64,46 @@ pub trait Addressable<A: Addr> {
 	fn get (&self, addr: A) -> u8;
 
 	/// Get a number in big endian format from the given address
-	fn get_be<T: Primitive> (&self, addr: A) -> T {
+	fn get_be<T: Num> (&self, addr: A) -> T {
 		number_from_be_bytes(|i| self.get(addr.offset(i as int)))
 	}
 
 	/// Get a number in big endian format from the given masked address
-	fn get_be_masked<T: Primitive> (&self, addr: A, mask: A) -> T {
-		number_from_be_bytes(|i| self.get(addr.offset_masked(i as int, mask.clone())))
+	fn get_be_masked<T: Num> (&self, addr: A, mask: A) -> T {
+		number_from_be_bytes(|i| self.get(addr.offset_masked(i as int, &mask)))
 	}
 
 	/// Get a number in little endian format from the given address
-	fn get_le<T: Primitive> (&self, addr: A) -> T {
+	fn get_le<T: Num> (&self, addr: A) -> T {
 		number_from_le_bytes(|i| self.get(addr.offset(i as int)))
 	}
 
 	/// Get a number in little endian format from the given masked address
-	fn get_le_masked<T: Primitive> (&self, addr: A, mask: A) -> T {
-		number_from_le_bytes(|i| self.get(addr.offset_masked(i as int, mask.clone())))
+	fn get_le_masked<T: Num> (&self, addr: A, mask: A) -> T {
+		number_from_le_bytes(|i| self.get(addr.offset_masked(i as int, &mask)))
 	}
 
 	/// Memory write: set the data at the given address
 	fn set (&mut self, addr: A, data: u8);
 
 	/// Store a number in big endian format to the given address
-	fn set_be<T: Primitive> (&mut self, addr: A, val: T) {
+	fn set_be<T: Num> (&mut self, addr: A, val: T) {
 		number_to_be_bytes(val, |i, b| self.set(addr.offset(i as int), b));
 	}
 
 	/// Store a number in big endian format to the given masked address
-	fn set_be_masked<T: Primitive> (&mut self, addr: A, mask: A, val: T) {
-		number_to_be_bytes(val, |i, b| self.set(addr.offset_masked(i as int, mask.clone()), b));
+	fn set_be_masked<T: Num> (&mut self, addr: A, mask: A, val: T) {
+		number_to_be_bytes(val, |i, b| self.set(addr.offset_masked(i as int, &mask), b));
 	}
 
 	/// Store a number in little endian format to the given address
-	fn set_le<T: Primitive> (&mut self, addr: A, val: T) {
+	fn set_le<T: Num> (&mut self, addr: A, val: T) {
 		number_to_le_bytes(val, |i, b| self.set(addr.offset(i as int), b));
 	}
 
 	/// Store a number in little endian format to the given masked address
-	fn set_le_masked<T: Primitive> (&mut self, addr: A, mask: A, val: T) {
-		number_to_le_bytes(val, |i, b| self.set(addr.offset_masked(i as int, mask.clone()), b));
+	fn set_le_masked<T: Num> (&mut self, addr: A, mask: A, val: T) {
+		number_to_le_bytes(val, |i, b| self.set(addr.offset_masked(i as int, &mask), b));
 	}
 
 	// Build a hexdump string of the given address range
@@ -121,7 +122,7 @@ pub trait Addressable<A: Addr> {
 
 #[cfg(test)]
 mod test {
-	use std::{fmt, vec};
+	use std::fmt;
 	use super::{number_from_be_bytes, number_from_le_bytes};
 	use super::{number_to_be_bytes, number_to_le_bytes};
 	use super::{Addr, Addressable};
@@ -136,13 +137,13 @@ mod test {
 
 	#[test]
 	fn address_offset_masked () {
-		assert_eq!(0x12ff_u16.offset_masked( 1, 0xffff), 0x1300_u16);
-		assert_eq!(0x12ff_u16.offset_masked( 1, 0x00ff), 0x1200_u16);
-		assert_eq!(0x1300_u16.offset_masked(-1, 0xffff), 0x12ff_u16);
-		assert_eq!(0x1300_u16.offset_masked(-1, 0x00ff), 0x13ff_u16);
+		assert_eq!(0x12ff_u16.offset_masked( 1, &0xffff), 0x1300_u16);
+		assert_eq!(0x12ff_u16.offset_masked( 1, &0x00ff), 0x1200_u16);
+		assert_eq!(0x1300_u16.offset_masked(-1, &0xffff), 0x12ff_u16);
+		assert_eq!(0x1300_u16.offset_masked(-1, &0x00ff), 0x13ff_u16);
 	}
 
-	fn test_convert_from_bytes<T: Primitive+fmt::Show> (convert: |f: |uint| -> u8| -> T, val: T, data: &[u8]) {
+	fn test_convert_from_bytes<T: Num+fmt::Show> (convert: |f: |uint| -> u8| -> T, val: T, data: &[u8]) {
 		assert_eq!(val, convert(|i| data[i]));
 	}
 
@@ -170,10 +171,10 @@ mod test {
 		test_convert_from_bytes(number_from_le_bytes, -0x6789abce_i32, [0x32, 0x54, 0x76, 0x98]);
 	}
 
-	fn test_convert_to_bytes<T: Primitive> (convert: |T, |uint, u8||, val: T, data: &[u8]) {
-		let mut d = vec::from_elem(data.len(), 0u8);
+	fn test_convert_to_bytes<T: Num> (convert: |T, |uint, u8||, val: T, data: &[u8]) {
+		let mut d = [0u8, ..16];
 		convert(val, |i, b| d[i] = b);
-		assert_eq!(d.as_slice(), data);
+		assert_eq!(d.slice_to(data.len()), data);
 	}
 
 	#[test]

@@ -1,4 +1,4 @@
-use std::{num, vec};
+use std::{num, slice};
 use super::{Addr, Addressable};
 
 /// Generic read/write memory (RAM)
@@ -16,7 +16,7 @@ impl<A: Addr> Ram<A> {
 	/// Create new RAM which will be addressable from 0 to the given address
 	pub fn with_capacity (last_addr: A) -> Ram<A> {
 		let size: uint = 1 + num::cast(last_addr.clone()).unwrap();
-		Ram { data: vec::from_elem(size, 0u8), last_addr: last_addr }
+		Ram { data: slice::from_elem(size, 0u8), last_addr: last_addr }
 	}
 
 	/// Returns the size of the RAM
