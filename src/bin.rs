@@ -1,8 +1,14 @@
+//!
+//! C64 emulator
+//!
+
 #[desc = "C64 emulator"];
 #[copyright = "Andreas Neuhaus <info@zargony.com>"];
 #[license = "MIT"];
 
 #[feature(phase)];
+
+#[warn(unnecessary_qualification, unnecessary_typecast, missing_doc)];
 
 #[phase(link, syntax)]
 extern crate log;
@@ -98,6 +104,7 @@ impl Addressable<u16> for CpuMemory {
 }
 
 
+/// The C64
 pub struct C64 {
 	priv cpu: Mos6510<CpuMemory>,
 }

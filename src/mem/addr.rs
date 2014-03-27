@@ -106,7 +106,7 @@ pub trait Addressable<A: Addr> {
 		number_to_le_bytes(val, |i, b| self.set(addr.offset_masked(i as int, &mask), b));
 	}
 
-	// Build a hexdump string of the given address range
+	/// Build a hexdump string of the given address range
 	fn hexdump (&self, addr1: A, addr2: A) -> ~str {
 		let mut addr = addr1;
 		let mut s = ~"";
