@@ -20,7 +20,7 @@ check: build/test
 	$<
 
 clean:
-	rm -rf build sdl2/build
+	rm -rf build
 
 distclean: clean
 	$(MAKE) -C vendor/sdl2 clean
