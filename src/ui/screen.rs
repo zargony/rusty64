@@ -1,5 +1,5 @@
 // FIXME: UI is hard to test (and optional), so there are no tests yet
-#[allow(dead_code)];
+#![allow(dead_code)]
 
 use std::slice;
 use super::sdl2::{pixels, render, video};

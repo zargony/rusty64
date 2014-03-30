@@ -1,4 +1,4 @@
-#[feature(phase)];
+#![feature(phase)]
 
 #[phase(link, syntax)]
 extern crate log;

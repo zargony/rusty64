@@ -2,13 +2,13 @@
 //! C64 emulator
 //!
 
-#[desc = "C64 emulator"];
-#[copyright = "Andreas Neuhaus <info@zargony.com>"];
-#[license = "MIT"];
+#![desc = "C64 emulator"]
+#![copyright = "Andreas Neuhaus <info@zargony.com>"]
+#![license = "MIT"]
 
-#[feature(phase)];
+#![feature(phase)]
 
-#[warn(unnecessary_qualification, unnecessary_typecast, missing_doc)];
+#![warn(missing_doc, unnecessary_qualification, unnecessary_typecast)]
 
 #[phase(link, syntax)]
 extern crate log;
