@@ -4,7 +4,7 @@ use super::{Addr, Addressable};
 
 /// Shared memory. Allows some arbitrary memory to be shared by cloning.
 pub struct SharedMemory<M> {
-	priv mem: Rc<RefCell<M>>,
+	mem: Rc<RefCell<M>>,
 }
 
 impl<A: Addr, M: Addressable<A>> SharedMemory<M> {
@@ -40,8 +40,8 @@ mod test {
 		mem: [u8, ..256],
 	}
 	impl Addressable<u8> for TestMemory {
-		fn get (&self, addr: u8) -> u8 { self.mem[addr] }
-		fn set (&mut self, addr: u8, data: u8) { self.mem[addr] = data; }
+		fn get (&self, addr: u8) -> u8 { self.mem[addr as uint] }
+		fn set (&mut self, addr: u8, data: u8) { self.mem[addr as uint] = data; }
 	}
 
 	#[test]

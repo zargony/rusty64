@@ -6,11 +6,11 @@ use super::sdl2::{pixels, render, video};
 
 /// A screen is a graphics window presented to the user
 pub struct Screen {
-	width: uint,
-	height: uint,
-	priv renderer: ~render::Renderer,
-	priv texture: ~render::Texture,
-	priv buffer: ~[u32],
+	pub width: uint,
+	pub height: uint,
+	renderer: ~render::Renderer,
+	texture: ~render::Texture,
+	buffer: ~[u32],
 }
 
 impl Screen {

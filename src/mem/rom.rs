@@ -4,8 +4,8 @@ use super::{Addr, Addressable};
 
 /// Generic read-only memory (ROM)
 pub struct Rom<A> {
-	priv data: ~[u8],
-	priv last_addr: A,
+	data: Vec<u8>,
+	last_addr: A,
 }
 
 impl<A: Addr> Rom<A> {
@@ -28,8 +28,8 @@ impl<A: Addr> Rom<A> {
 impl<A: Addr> Addressable<A> for Rom<A> {
 	fn get (&self, addr: A) -> u8 {
 		if addr > self.last_addr { fail!("rom: Read beyond memory bounds (${:X} > ${:X})", addr, self.last_addr); }
-		let i: u64 = num::cast(addr).unwrap();
-		self.data[i]
+		let i: uint = num::cast(addr).unwrap();
+		*self.data.get(i)
 	}
 
 	fn set (&mut self, addr: A, _data: u8) {

@@ -4,9 +4,9 @@ use super::mos6502::Mos6502;
 
 /// The MOS65010 processor
 pub struct Mos6510<M> {
-	priv cpu: Mos6502<M>,					// Core CPU is a MOS6502
-	priv port_ddr: u8,						// CPU port data direction register
-	priv port_dat: u8,						// CPU port data register
+	cpu: Mos6502<M>,						// Core CPU is a MOS6502
+	port_ddr: u8,							// CPU port data direction register
+	port_dat: u8,							// CPU port data register
 }
 
 impl<M: Addressable<u16>> Mos6510<M> {

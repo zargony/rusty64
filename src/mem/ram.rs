@@ -3,8 +3,8 @@ use super::{Addr, Addressable};
 
 /// Generic read/write memory (RAM)
 pub struct Ram<A> {
-	priv data: ~[u8],
-	priv last_addr: A,
+	data: ~[u8],
+	last_addr: A,
 }
 
 impl<A: Addr> Ram<A> {
@@ -29,13 +29,13 @@ impl<A: Addr> Ram<A> {
 impl<A: Addr> Addressable<A> for Ram<A> {
 	fn get (&self, addr: A) -> u8 {
 		if addr > self.last_addr { fail!("ram: Read beyond memory bounds (${:X} > ${:X})", addr, self.last_addr); }
-		let i: u64 = num::cast(addr).unwrap();
+		let i: uint = num::cast(addr).unwrap();
 		self.data[i]
 	}
 
 	fn set (&mut self, addr: A, data: u8) {
 		if addr > self.last_addr { fail!("ram: Write beyond memory bounds (${:X} > ${:X})", addr, self.last_addr); }
-		let i: u64 = num::cast(addr).unwrap();
+		let i: uint = num::cast(addr).unwrap();
 		self.data[i] = data;
 	}
 }

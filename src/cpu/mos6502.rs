@@ -436,16 +436,16 @@ static IRQ_VECTOR:			u16 = 0xfffe;
 
 /// The MOS6502 processor
 pub struct Mos6502<M> {
-	priv pc: u16,						// Program Counter
-	priv ac: u8,						// Accumulator
-	priv x: u8,							// X register
-	priv y: u8,							// Y register
-	priv sr: u8,						// Status Register (NV-BDIZC: Negative, oVerflow, 1, Break, Decimal, Interrupt, Zero, Carry)
-	priv sp: u8,						// Stack Pointer
-	priv mem: M,						// main memory
-	priv reset: bool,					// RESET line
-	priv nmi: bool,						// NMI line
-	priv irq: bool,						// IRQ line
+	pc: u16,							// Program Counter
+	ac: u8,								// Accumulator
+	x: u8,								// X register
+	y: u8,								// Y register
+	sr: u8,								// Status Register (NV-BDIZC: Negative, oVerflow, 1, Break, Decimal, Interrupt, Zero, Carry)
+	sp: u8,								// Stack Pointer
+	mem: M,								// main memory
+	reset: bool,						// RESET line
+	nmi: bool,							// NMI line
+	irq: bool,							// IRQ line
 }
 
 /// The MOS6502 status flags

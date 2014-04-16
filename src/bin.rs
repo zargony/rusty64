@@ -106,7 +106,7 @@ impl Addressable<u16> for CpuMemory {
 
 /// The C64
 pub struct C64 {
-	priv cpu: Mos6510<CpuMemory>,
+	cpu: Mos6510<CpuMemory>,
 }
 
 impl C64 {
