@@ -1,0 +1,18 @@
+[package]
+name = "rusty64"
+version = "0.0.1"
+authors = ["Andreas Neuhaus <zargony@zargony.com>"]
+description = "Emulator platform for 8-bit computers"
+homepage = "https://github.com/zargony/rusty64"
+repository = "https://github.com/zargony/rusty64"
+readme = "README.md"
+keywords = ["emulator", "8bit"]
+license = "MIT"
+
+[dependencies]
+log = "*"
+rand = "*"
+
+[[bin]]
+name = "c64"
+path = "src/main.rs"

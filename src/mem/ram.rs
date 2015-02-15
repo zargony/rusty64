@@ -1,41 +1,50 @@
-use std::{num, slice};
-use super::{Addr, Addressable};
+use rand;
+use std::iter;
+use std::num::{self, Int};
+use super::{Address, Addressable};
 
 /// Generic read/write memory (RAM)
 pub struct Ram<A> {
-    data: ~[u8],
+    data: Vec<u8>,
     last_addr: A,
 }
 
-impl<A: Addr> Ram<A> {
-    /// Create new RAM with full capacity of its address range
+impl<A: Address> Ram<A> {
+    /// Create new RAM with full capacity of its address range. The whole
+    /// address space is filled with random bytes initially.
     pub fn new () -> Ram<A> {
-        Ram::with_capacity(num::Bounded::max_value())
+        Ram::with_capacity(Int::max_value())
     }
 
-    /// Create new RAM which will be addressable from 0 to the given address
+    /// Create new RAM which will be addressable from 0 to the given address.
+    /// The whole address space is filled with random bytes initially.
     pub fn with_capacity (last_addr: A) -> Ram<A> {
-        let size: uint = 1 + num::cast(last_addr.clone()).unwrap();
-        Ram { data: slice::from_elem(size, 0u8), last_addr: last_addr }
+        // FIXME: Use range notation instead of calling iter::range_inclusive
+        let data: Vec<u8> = iter::range_inclusive(Int::zero(), last_addr).map(|_| rand::random()).collect();
+        Ram { data: data, last_addr: last_addr }
     }
 
-    /// Returns the size of the RAM
+    /// Returns the capacity of the RAM
     #[allow(dead_code)]
-    pub fn size (&self) -> uint {
+    pub fn capacity (&self) -> usize {
         self.data.len()
     }
 }
 
-impl<A: Addr> Addressable<A> for Ram<A> {
+impl<A: Address> Addressable<A> for Ram<A> {
     fn get (&self, addr: A) -> u8 {
-        if addr > self.last_addr { fail!("ram: Read beyond memory bounds (${:X} > ${:X})", addr, self.last_addr); }
-        let i: uint = num::cast(addr).unwrap();
+        if addr > self.last_addr {
+            panic!("ram: Read beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
+        }
+        let i: usize = num::cast(addr).unwrap();
         self.data[i]
     }
 
     fn set (&mut self, addr: A, data: u8) {
-        if addr > self.last_addr { fail!("ram: Write beyond memory bounds (${:X} > ${:X})", addr, self.last_addr); }
-        let i: uint = num::cast(addr).unwrap();
+        if addr > self.last_addr {
+            panic!("ram: Write beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
+        }
+        let i: usize = num::cast(addr).unwrap();
         self.data[i] = data;
     }
 }
@@ -49,13 +58,13 @@ mod test {
     #[test]
     fn create_with_full_addressable_capacity () {
         let memory: Ram<u8> = Ram::new();
-        assert_eq!(memory.size(), 256);
+        assert_eq!(memory.capacity(), 256);
     }
 
     #[test]
     fn create_with_requested_capacity () {
         let memory: Ram<u16> = Ram::with_capacity(0x03ff_u16);
-        assert_eq!(memory.size(), 1024);
+        assert_eq!(memory.capacity(), 1024);
     }
 
     #[test]

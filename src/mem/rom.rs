@@ -1,6 +1,9 @@
-use std::{num, os};
-use std::io::fs::File;
-use super::{Addr, Addressable};
+use std::{env, num};
+use std::io::Read;
+use std::fs::File;
+// FIXME: Remove import of std::path::Path once it landed in the prelude
+use std::path::{Path, AsPath};
+use super::{Address, Addressable};
 
 /// Generic read-only memory (ROM)
 pub struct Rom<A> {
@@ -8,32 +11,43 @@ pub struct Rom<A> {
     last_addr: A,
 }
 
-impl<A: Addr> Rom<A> {
+impl<A: Address> Rom<A> {
     /// Create new ROM with contents of the given file
-    pub fn new (path: &Path) -> Rom<A> {
-        let filename = os::self_exe_path().unwrap().join("../share").join(path);
+    pub fn new<P: AsPath + ?Sized> (path: &P) -> Rom<A> {
+        // FIXME: Remove explicit Path::new once std::env uses the new std::path module
+        let filename = Path::new(&env::current_dir().unwrap()).join("share").join(path);
         info!("rom: Loading ROM from {}", filename.display());
-        let data = File::open(&filename).read_to_end().unwrap();
+        let mut data = Vec::new();
+        let mut f = match File::open(&filename) {
+            Err(err) => panic!("rom: Unable to open ROM: {}", err),
+            Ok(f) => f,
+        };
+        match f.read_to_end(&mut data) {
+            Err(err) => panic!("rom: Unable to load ROM: {}", err),
+            Ok(()) => assert!(data.len() > 0, "rom: Unable to load empty ROM"),
+        }
         let last_addr: A = num::cast(data.len() - 1).unwrap();
         Rom { data: data, last_addr: last_addr }
     }
 
-    /// Returns the size of the ROM
+    /// Returns the capacity of the ROM
     #[allow(dead_code)]
-    pub fn size (&self) -> uint {
+    pub fn capacity (&self) -> usize {
         self.data.len()
     }
 }
 
-impl<A: Addr> Addressable<A> for Rom<A> {
+impl<A: Address> Addressable<A> for Rom<A> {
     fn get (&self, addr: A) -> u8 {
-        if addr > self.last_addr { fail!("rom: Read beyond memory bounds (${:X} > ${:X})", addr, self.last_addr); }
-        let i: uint = num::cast(addr).unwrap();
-        *self.data.get(i)
+        if addr > self.last_addr {
+            panic!("rom: Read beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
+        }
+        let i: usize = num::cast(addr).unwrap();
+        self.data[i]
     }
 
     fn set (&mut self, addr: A, _data: u8) {
-        warn!("rom: Ignoring write to read-only memory (${:X})", addr);
+        warn!("rom: Ignoring write to read-only memory ({})", addr.display());
     }
 }
 
@@ -45,20 +59,20 @@ mod test {
 
     #[test]
     fn create_with_file_contents () {
-        let memory: Rom<u16> = Rom::new(&Path::new("c64/kernal.rom"));
-        assert_eq!(memory.size(), 8192);
+        let memory: Rom<u16> = Rom::new("c64/kernal.rom");
+        assert_eq!(memory.capacity(), 8192);
     }
 
     #[test]
     fn read () {
-        let memory: Rom<u16> = Rom::new(&Path::new("c64/kernal.rom"));
+        let memory: Rom<u16> = Rom::new("c64/kernal.rom");
         assert_eq!(memory.get(0x0123), 0x60);
     }
 
     #[test]
     fn write_does_nothing () {
-        let mut memory: Rom<u16> = Rom::new(&Path::new("c64/kernal.rom"));
-        memory.set(0x123, 0x55);
+        let mut memory: Rom<u16> = Rom::new("c64/kernal.rom");
+        memory.set(0x0123, 0x55);
         assert!(memory.get(0x0123) != 0x55);
     }
 }

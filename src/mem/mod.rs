@@ -1,9 +1,8 @@
-pub use self::addr::{Addr, Addressable};
+pub use self::addr::{Address, Addressable};
 pub use self::ram::Ram;
 pub use self::rom::Rom;
-pub use self::shared::SharedMemory;
 
-pub mod addr;   // FIXME: why does addr need to be public?
+pub mod addr;       // FIXME: needs to be pub, see Rust issue #18241 and #16264
 mod ram;
 mod rom;
 mod shared;

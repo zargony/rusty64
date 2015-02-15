@@ -1,8 +1,3 @@
-use std::fmt;
-use std::mem::size_of;
-use mem::Addressable;
-use super::cpu::CPU;
-
 // General information on 65xx: http://en.wikipedia.org/wiki/MOS_Technology_6510
 // Useful emulator information: http://emudocs.org/?page=CPU%2065xx
 // Web simulator and much info: http://e-tradition.net/bytes/6502/
@@ -15,8 +10,17 @@ use super::cpu::CPU;
 //            http://visual6502.org/wiki/index.php?title=6502TestPrograms
 //            http://forum.6502.org/viewtopic.php?f=2&t=2241
 
+use std::fmt;
+use std::mem::size_of;
+use std::num::Int;
+use mem::{Address, Addressable};
+use super::CPU;
+use self::Instruction::*;
+use self::Operand::*;
+use self::StatusFlag::*;
+
 /// Processor instructions
-#[deriving(Eq)]
+#[derive(Debug, PartialEq)]
 enum Instruction {
     // Load/store operations
     LDA, LDX, LDY, STA, STX, STY,
@@ -112,7 +116,7 @@ impl Instruction {
                 cpu.ac &= operand.get(cpu);
                 cpu.set_zn(cpu.ac);
             },
-            EOR => {                                // exclusive OR [N,Z]
+            EOR => {                                // logical exclusive OR [N,Z]
                 cpu.ac ^= operand.get(cpu);
                 cpu.set_zn(cpu.ac);
             },
@@ -128,7 +132,7 @@ impl Instruction {
             },
             // Arithmetic
             ADC => {                                // add with carry [N,V,Z,C]
-                if cpu.get_flag(DecimalFlag) { fail!("mos6502: Decimal mode ADC not supported yet :("); }
+                if cpu.get_flag(DecimalFlag) { panic!("mos6502: Decimal mode ADC not supported yet :("); }
                 let value = operand.get(cpu);
                 let mut result = cpu.ac as u16 + value as u16;
                 if cpu.get_flag(CarryFlag) { result += 1; }
@@ -139,7 +143,7 @@ impl Instruction {
                 cpu.set_zn(cpu.ac);
             },
             SBC => {                                // subtract with carry [N,V,Z,C]
-                if cpu.get_flag(DecimalFlag) { fail!("mos6502: Decimal mode SBC not supported yet :("); }
+                if cpu.get_flag(DecimalFlag) { panic!("mos6502: Decimal mode SBC not supported yet :("); }
                 let value = operand.get(cpu);
                 let mut result = cpu.ac as u16 - value as u16;
                 if !cpu.get_flag(CarryFlag) { result -= 1; }
@@ -314,7 +318,7 @@ impl Instruction {
                 cpu.push(cpu.sr);
                 cpu.set_flag(InterruptDisableFlag, true);
                 cpu.pc = cpu.mem.get_le(IRQ_VECTOR);
-                debug!("mos6502: BRK - Jumping to (${:04X}) -> ${:04X}", IRQ_VECTOR, cpu.pc);
+                debug!("mos6502: BRK - Jumping to ({}) -> {}", IRQ_VECTOR.display(), cpu.pc.display());
             },
             NOP => {                                // no operation
             },
@@ -328,9 +332,9 @@ impl Instruction {
     }
 }
 
-impl fmt::Show for Instruction {
+impl fmt::Display for Instruction {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.pad(match *self {
+        write!(f, "{}", match *self {
             LDA => "LDA", LDX => "LDX", LDY => "LDY", STA => "STA", STX => "STX", STY => "STY",
             TAX => "TAX", TAY => "TAY", TXA => "TXA", TYA => "TYA",
             TSX => "TSX", TXS => "TXS", PHA => "PHA", PHP => "PHP", PLA => "PLA", PLP => "PLP",
@@ -347,7 +351,7 @@ impl fmt::Show for Instruction {
 }
 
 /// Instruction operand with different addressing modes
-#[deriving(Eq)]
+#[derive(Debug, PartialEq)]
 enum Operand {
     Implied,                            // OPC              operand implied
     Immediate(u8),                      // OPC #$BB         operand is value $BB
@@ -368,14 +372,14 @@ impl Operand {
     /// Returns the address an operand targets to
     fn addr<M: Addressable<u16>> (&self, cpu: &Mos6502<M>) -> u16 {
         match *self {
-            Implied                             => fail!("mos6502: Implied operand does never target an address"),
-            Immediate(..)                       => fail!("mos6502: Immediate operand does never target an address"),
-            Accumulator                         => fail!("mos6502: Accumulator operand does never target an address"),
+            Implied                             => panic!("mos6502: Implied operand does never target an address"),
+            Immediate(..)                       => panic!("mos6502: Immediate operand does never target an address"),
+            Accumulator                         => panic!("mos6502: Accumulator operand does never target an address"),
             Relative(offset)                    => cpu.pc + offset as u16,
             Absolute(addr)                      => addr,
             AbsoluteIndexedWithX(addr)          => addr + cpu.x as u16,
             AbsoluteIndexedWithY(addr)          => addr + cpu.y as u16,
-            Indirect(addr)                      => cpu.mem.get_le_masked(addr, 0x00ff),         // simulating MSB-bug
+            Indirect(addr)                      => cpu.mem.get_le_masked(addr, 0xff00),         // simulating MSB-bug
             ZeroPage(addr)                      => addr as u16,
             ZeroPageIndexedWithX(addr)          => (addr + cpu.x) as u16,                       // no page transition
             ZeroPageIndexedWithY(addr)          => (addr + cpu.y) as u16,                       // no page transition
@@ -387,43 +391,43 @@ impl Operand {
     /// Returns the value an operand specifies
     fn get<M: Addressable<u16>> (&self, cpu: &Mos6502<M>) -> u8 {
         match *self {
-            Implied                             => fail!("mos6502: Implied operand does never have a value"),
+            Implied                             => panic!("mos6502: Implied operand does never have a value"),
             Immediate(value)                    => value,
             Accumulator                         => cpu.ac,
-            Relative(..)                        => fail!("mos6502: Relative operand does never have a value"),
-            op                                  => cpu.mem.get(op.addr(cpu)),
+            Relative(..)                        => panic!("mos6502: Relative operand does never have a value"),
+            ref op                              => cpu.mem.get(op.addr(cpu)),
         }
     }
 
     /// Sets the value an operand specifies
     fn set<M: Addressable<u16>> (&self, cpu: &mut Mos6502<M>, value: u8) {
         match *self {
-            Implied                             => fail!("mos6502: Implied operand does never set a value"),
-            Immediate(..)                       => fail!("mos6502: Immediate operand does never set a value"),
+            Implied                             => panic!("mos6502: Implied operand does never set a value"),
+            Immediate(..)                       => panic!("mos6502: Immediate operand does never set a value"),
             Accumulator                         => cpu.ac = value,
-            Relative(..)                        => fail!("mos6502: Relative operand does never set a value"),
-            op                                  => { let addr = op.addr(cpu); cpu.mem.set(addr, value); },
+            Relative(..)                        => panic!("mos6502: Relative operand does never set a value"),
+            ref op                              => { let addr = op.addr(cpu); cpu.mem.set(addr, value); },
         }
     }
 }
 
-impl fmt::Show for Operand {
+impl fmt::Display for Operand {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.pad(match *self {
-            Implied                             => ~"",
-            Immediate(value)                    => format!("\\#${:02X}", value),
-            Accumulator                         => ~"A",
-            Relative(offset)                    => format!("{:+d}", offset),
-            Absolute(addr)                      => format!("${:04X}", addr),
-            AbsoluteIndexedWithX(addr)          => format!("${:04X},X", addr),
-            AbsoluteIndexedWithY(addr)          => format!("${:04X},Y", addr),
-            Indirect(addr)                      => format!("(${:04X})", addr),
-            ZeroPage(addr)                      => format!("${:02X}", addr),
-            ZeroPageIndexedWithX(addr)          => format!("${:02X},X", addr),
-            ZeroPageIndexedWithY(addr)          => format!("${:02X},Y", addr),
-            ZeroPageIndexedWithXIndirect(addr)  => format!("(${:02X},X)", addr),
-            ZeroPageIndirectIndexedWithY(addr)  => format!("(${:02X}),Y", addr),
-        })
+        match *self {
+            Implied                             => write!(f, ""),
+            Immediate(value)                    => write!(f, "\\#${:02X}", value),
+            Accumulator                         => write!(f, "A"),
+            Relative(offset)                    => write!(f, "{:+}", offset),
+            Absolute(addr)                      => write!(f, "{}", addr.display()),
+            AbsoluteIndexedWithX(addr)          => write!(f, "{},X", addr.display()),
+            AbsoluteIndexedWithY(addr)          => write!(f, "{},Y", addr.display()),
+            Indirect(addr)                      => write!(f, "({})", addr.display()),
+            ZeroPage(addr)                      => write!(f, "{}", addr.display()),
+            ZeroPageIndexedWithX(addr)          => write!(f, "{},X", addr.display()),
+            ZeroPageIndexedWithY(addr)          => write!(f, "{},Y", addr.display()),
+            ZeroPageIndexedWithXIndirect(addr)  => write!(f, "({},X)", addr.display()),
+            ZeroPageIndirectIndexedWithY(addr)  => write!(f, "({}),Y", addr.display()),
+        }
     }
 }
 
@@ -435,6 +439,7 @@ static RESET_VECTOR:        u16 = 0xfffc;
 static IRQ_VECTOR:          u16 = 0xfffe;
 
 /// The MOS6502 processor
+#[derive(Debug)]
 pub struct Mos6502<M> {
     pc: u16,                            // Program Counter
     ac: u8,                             // Accumulator
@@ -449,6 +454,7 @@ pub struct Mos6502<M> {
 }
 
 /// The MOS6502 status flags
+#[derive(Debug)]
 pub enum StatusFlag {
     CarryFlag               = 0,
     ZeroFlag                = 1,
@@ -466,14 +472,14 @@ impl<M: Addressable<u16>> Mos6502<M> {
     }
 
     /// Get the memory contents at the current PC and advance the PC
-    fn next<T: Primitive> (&mut self) -> T {
+    fn next<T: Int> (&mut self) -> T {
         let val = self.mem.get_le(self.pc);
         self.pc += size_of::<T>() as u16;
         val
     }
 
     /// Parse next instruction and advance PC. Returns number of cycles, instruction and operand
-    fn next_instruction (&mut self) -> Option<(uint, Instruction, Operand)> {
+    fn next_instruction (&mut self) -> Option<(usize, Instruction, Operand)> {
         let opcode: u8 = self.next();
         Some(match opcode {
             // Load/store operations
@@ -665,18 +671,18 @@ impl<M: Addressable<u16>> Mos6502<M> {
     }
 
     /// Push a value onto the stack
-    fn push<T: Primitive> (&mut self, value: T) {
+    fn push<T: Int> (&mut self, value: T) {
         // SP points to the next free stack position as $0100+SP. SP needs to be
         // initialized to #$FF by the reset code. As the stack grows, SP decreases
         // down to #$00 (i.e. stack full). Stack access never leaves the stack page!
         self.sp -= size_of::<T>() as u8;
-        self.mem.set_le_masked(0x0100 + (self.sp + 1) as u16, 0x00ff, value);
+        self.mem.set_le_masked(0x0100 + (self.sp + 1) as u16, 0xff00, value);
     }
 
     /// Pop a value from the stack
-    fn pop<T: Primitive> (&mut self) -> T {
+    fn pop<T: Int> (&mut self) -> T {
         // See push() for details
-        let value: T = self.mem.get_le_masked(0x0100 + (self.sp + 1) as u16, 0x00ff);
+        let value: T = self.mem.get_le_masked(0x0100 + (self.sp + 1) as u16, 0xff00);
         self.sp += size_of::<T>() as u8;
         value
     }
@@ -703,9 +709,9 @@ impl<M: Addressable<u16>> CPU for Mos6502<M> {
         self.reset = true;
     }
 
-    /// Do one step (execute the next instruction). Returns the number of
-    /// cycles the instruction needed
-    fn step (&mut self) -> uint {
+    /// Do one step (execute the next instruction). Return the number of cycles
+    /// that were simulated.
+    fn step (&mut self) -> usize {
         // Process RESET if line was triggered
         if self.reset {
             // A RESET jumps to the vector at RESET_VECTOR and sets the InterruptDisableFlag.
@@ -717,7 +723,7 @@ impl<M: Addressable<u16>> CPU for Mos6502<M> {
             self.reset = false;
             self.nmi = false;
             self.irq = false;
-            debug!("mos6502: RESET - Jumping to (${:04X}) -> ${:04X}", RESET_VECTOR, self.pc);
+            debug!("mos6502: RESET - Jumping to ({}) -> {}", RESET_VECTOR.display(), self.pc.display());
             return 6;
         }
         // Process NMI if line was triggered
@@ -730,7 +736,7 @@ impl<M: Addressable<u16>> CPU for Mos6502<M> {
             self.push(self.sr);
             self.pc = self.mem.get_le(NMI_VECTOR);
             self.nmi = false;
-            debug!("mos6502: NMI - Jumping to (${:04X}) -> ${:04X}", NMI_VECTOR, self.pc);
+            debug!("mos6502: NMI - Jumping to ({}) -> {}", NMI_VECTOR.display(), self.pc.display());
             return 7;
         }
         // Process IRQ if line was triggered and interrupts are enabled
@@ -742,7 +748,7 @@ impl<M: Addressable<u16>> CPU for Mos6502<M> {
             // The BRK instruction does the same, but sets BreakFlag (before pushing SR).
             // See also http://6502.org/tutorials/interrupts.html
             self.set_flag(BreakFlag, false);
-            if self.mem.get(self.pc) == 0x00 { self.pc += 1; }    // Emulate BRK bug
+            if self.mem.get(self.pc) == 0x00 { self.pc += 1; }    // Simulate BRK bug
             self.push(self.pc);
             self.push(self.sr);
             self.set_flag(InterruptDisableFlag, true);
@@ -752,7 +758,7 @@ impl<M: Addressable<u16>> CPU for Mos6502<M> {
             // FIXME: but after the hardware drops the IRQ line (which the interrupt
             // FIXME: code usually causes, but not necessary needs to cause).
             self.irq = false;
-            debug!("mos6502: IRQ - Jumping to (${:04X}) -> ${:04X}", IRQ_VECTOR, self.pc);
+            debug!("mos6502: IRQ - Jumping to ({}) -> {}", IRQ_VECTOR.display(), self.pc.display());
             return 7;
         }
         // Read and parse next opcode
@@ -762,15 +768,15 @@ impl<M: Addressable<u16>> CPU for Mos6502<M> {
             Some((cycles, instruction, operand)) => {
                 let new_pc = self.pc;
                 instruction.execute(self, &operand);
-                debug!("mos6502: {:04X}  {:-8s}  {:-3} {:-26}  -[{:u}]-> AC:{:02X} X:{:02X} Y:{:02X} SR:{:02X} SP:{:02X} NV-BDIZC:{:08t}",
-                    old_pc, self.mem.hexdump(old_pc, new_pc), instruction, operand,
+                trace!("mos6502: {}  {:-8}  {:-3} {:-26}  -[{}]-> AC:{:02X} X:{:02X} Y:{:02X} SR:{:02X} SP:{:02X} NV-BDIZC:{:08b}",
+                    old_pc.display(), self.mem.hexdump(old_pc, new_pc), instruction, operand,
                     cycles, self.ac, self.x, self.y, self.sr, self.sp, self.sr);
                 cycles
             },
             // Got illegal opcode
             None => {
-                debug!("mos6502: {:04X}  {:-8s}  ???", old_pc, self.mem.hexdump(old_pc, old_pc+3));
-                fail!("mos6502: Illegal opcode ${:02X} at ${:04X}", self.mem.get(old_pc), old_pc)
+                trace!("mos6502: {}  {:-8}  ???", old_pc.display(), self.mem.hexdump(old_pc, old_pc+3));
+                panic!("mos6502: Illegal opcode #${:02X} at {}", self.mem.get(old_pc), old_pc.display());
             },
         }
     }
@@ -779,12 +785,11 @@ impl<M: Addressable<u16>> CPU for Mos6502<M> {
 
 #[cfg(test)]
 mod test {
-    use mem::{Addressable, Ram, Rom};
+    use mem::{Address, Addressable, Ram, Rom};
     use super::super::CPU;
-    use super::LDA;
-    use super::{Immediate, Accumulator, Relative, Absolute, AbsoluteIndexedWithX, AbsoluteIndexedWithY, Indirect};
-    use super::{ZeroPage, ZeroPageIndexedWithX, ZeroPageIndexedWithY, ZeroPageIndexedWithXIndirect, ZeroPageIndirectIndexedWithY};
-    use super::{CarryFlag, ZeroFlag, BreakFlag, OverflowFlag, NegativeFlag};
+    use super::Instruction::LDA;
+    use super::Operand::*;
+    use super::StatusFlag::*;
     use super::Mos6502;
 
     /// Test-memory that returns/expects the lower nibble of the address as data
@@ -871,8 +876,8 @@ mod test {
     #[test]
     fn indirect_addressing_bug () {
         let cpu = test_cpu(SpecialTestMemory);
-        // Indirect($c0ff) must erroneously get address from $c0ff/$c000 instead of $c0ff/$c100
-        assert_eq!(Indirect(0xc0ff).addr(&cpu), 0xc0bf);                    // must be $c0bf, not $c1bf
+        // Indirect($C0FF) must erroneously get address from $C0FF/$C000 instead of $C0FF/$C100
+        assert_eq!(Indirect(0xc0ff).addr(&cpu), 0xc0bf);                    // must be $C0BF, not $C1BF
     }
 
     #[test]
@@ -891,7 +896,7 @@ mod test {
         // Zero-page indexed indirect addressing must not transition to the next page when indexing...
         assert_eq!(ZeroPageIndexedWithXIndirect(0xff).addr(&cpu), 0x1110);  // must be $1110, not $1211
         // ...but may transition to the next page when indirecting
-        assert_eq!(ZeroPageIndexedWithXIndirect(0xee).addr(&cpu), 0x01ff);  // must be $01ff, not $00ff
+        assert_eq!(ZeroPageIndexedWithXIndirect(0xee).addr(&cpu), 0x01ff);  // must be $01FF, not $00FF
     }
 
     #[test]
@@ -901,7 +906,7 @@ mod test {
         // Zero-page indirect indexed addressing may transition to the next page when indirecting...
         assert_eq!(ZeroPageIndirectIndexedWithY(0xff).addr(&cpu), 0x0221);  // must be $0221, not $0121
         // ...and may transition to the next page when indexing
-        assert_eq!(ZeroPageIndirectIndexedWithY(0xf0).addr(&cpu), 0xf212);  // must be $f212, not $f112
+        assert_eq!(ZeroPageIndirectIndexedWithY(0xf0).addr(&cpu), 0xf212);  // must be $F212, not $F112
     }
 
     #[test]
@@ -926,7 +931,10 @@ mod test {
     fn fetch_instruction_and_advance_pc () {
         let mut cpu = test_cpu(TestMemory);
         cpu.pc = 0x00ad;                    // AD AE AF: LDA $AFAE
-        assert_eq!(cpu.next_instruction(), Some((4, LDA, Absolute(0xafae))));
+        let (cycles, instruction, operand) = cpu.next_instruction().unwrap();
+        assert_eq!(cycles, 4);
+        assert_eq!(instruction, LDA);
+        assert_eq!(operand, Absolute(0xafae));
     }
 
     #[test]
@@ -1066,14 +1074,14 @@ mod test {
         // Test all instructions using Ruud Baltissen's test ROM from his VHDL 6502 core.
         // See also http://visual6502.org/wiki/index.php?title=6502TestPrograms
         let mut cpu = test_cpu(Ram::with_capacity(0xffff_u16));
-        let rom: Rom<u16> = Rom::new(&Path::new("test/ttl6502_v10.rom"));
-        for i in range(0_u16, rom.size() as u16) { cpu.mem.set(i + 0xe000, rom.get(i)); }
+        let rom: Rom<u16> = Rom::new("test/ttl6502_v10.rom");
+        cpu.mem.copy(0xe000_u16, &rom, 0x0000_u16, rom.capacity());
         cpu.reset();
-        for _ in range(0, 3000) {
+        for _ in 0..3000 {
             cpu.step();
             if cpu.pc == 0xf5b6 { cpu.pc = 0xf5e6; }        // TODO: This skips decimal mode tests for now
         }
         let status = cpu.mem.get(0x0003);
-        assert!(status == 0xfe, format!("stopped at ${:04X} with status ${:02X}", cpu.pc, status));
+        assert!(status == 0xfe, format!("stopped at {} with status #${:02X}", cpu.pc.display(), status));
     }
 }

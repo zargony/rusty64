@@ -1,4 +1,6 @@
-This is an attempt to create an emulator platform for 16-bit computers in [Rust](http://www.rust-lang.org). It aims to emulate a [C64](http://en.wikipedia.org/wiki/Commodore_64) initially and maybe other computers some day.
+# About
+
+This is an attempt to create an emulator platform for 16-bit computers in [Rust](http://www.rust-lang.org). It aims to emulate a [C-64](http://en.wikipedia.org/wiki/Commodore_64) initially and maybe other computers some day.
 
 The emulator consists of independent modules that emulate hardware pieces like generic RAM or a 6502 CPU. It's an interpreting emulation (no code translation at run time) and aims to be cycle-accurate. Hardware emulating modules are connected together, loaded with firmware and become an emulator for e.g. the C64.
 

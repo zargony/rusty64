@@ -1,6 +1,5 @@
 use mem::Addressable;
-use super::cpu::CPU;
-use super::mos6502::Mos6502;
+use super::{CPU, Mos6502};
 
 /// The MOS65010 processor
 pub struct Mos6510<M> {
@@ -35,9 +34,9 @@ impl<M: Addressable<u16>> CPU for Mos6510<M> {
         self.cpu.reset();
     }
 
-    /// Do one step (execute the next instruction). Returns the number of
-    /// cycles the instruction needed
-    fn step (&mut self) -> uint {
+    /// Do one step (execute the next instruction). Return the number of cycles
+    /// that were simulated.
+    fn step (&mut self) -> usize {
         self.cpu.step()
     }
 }

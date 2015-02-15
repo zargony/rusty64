@@ -3,7 +3,7 @@ pub trait CPU {
     /// Reset the CPU
     fn reset (&mut self);
 
-    /// Do one step (execute the next instruction). Returns the number of
-    /// cycles the instruction needed
-    fn step (&mut self) -> uint;
+    /// Do one step (execute the next instruction). Return the number of cycles
+    /// that were simulated.
+    fn step (&mut self) -> usize;
 }

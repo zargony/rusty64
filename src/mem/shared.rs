@@ -1,69 +1,50 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use super::{Addr, Addressable};
+use super::{Address, Addressable};
 
-/// Shared memory. Allows some arbitrary memory to be shared by cloning.
-pub struct SharedMemory<M> {
-    mem: Rc<RefCell<M>>,
+impl<A: Address, M: Addressable<A>> Addressable<A> for RefCell<M> {
+    fn get (&self, addr: A) -> u8 { self.borrow().get(addr) }
+    fn set (&mut self, addr: A, data: u8) { self.borrow_mut().set(addr, data) }
 }
 
-impl<A: Addr, M: Addressable<A>> SharedMemory<M> {
-    /// Create new shared memory of the given memory object
-    pub fn new (mem: M) -> SharedMemory<M> {
-        SharedMemory { mem: Rc::new(RefCell::new(mem)) }
-    }
-}
-
-impl<A: Addr, M: Addressable<A>> Addressable<A> for SharedMemory<M> {
-    fn get (&self, addr: A) -> u8 {
-        self.mem.borrow().get(addr)
-    }
-
-    fn set (&mut self, addr: A, data: u8) {
-        self.mem.borrow_mut().set(addr, data);
-    }
-}
-
-impl<A: Addr, M: Addressable<A>> Clone for SharedMemory<M> {
-    fn clone (&self) -> SharedMemory<M> {
-        SharedMemory { mem: self.mem.clone() }
-    }
+impl<A: Address, M: Addressable<A>> Addressable<A> for Rc<RefCell<M>> {
+    fn get (&self, addr: A) -> u8 { (**self).borrow().get(addr) }
+    fn set (&mut self, addr: A, data: u8) { (**self).borrow_mut().set(addr, data) }
 }
 
 
 #[cfg(test)]
 mod test {
+    use std::cell::RefCell;
+    use std::rc::Rc;
     use super::super::Addressable;
-    use super::SharedMemory;
 
     struct TestMemory {
-        mem: [u8, ..256],
+        mem: [u8; 256],
     }
     impl Addressable<u8> for TestMemory {
-        fn get (&self, addr: u8) -> u8 { self.mem[addr as uint] }
-        fn set (&mut self, addr: u8, data: u8) { self.mem[addr as uint] = data; }
+        fn get (&self, addr: u8) -> u8 { self.mem[addr as usize] }
+        fn set (&mut self, addr: u8, data: u8) { self.mem[addr as usize] = data; }
     }
 
     #[test]
     fn read_write () {
-        let mut mem = TestMemory { mem: [0, ..256] };
+        let mut mem = Rc::new(RefCell::new(TestMemory { mem: [0; 256] }));
         mem.set(0x12, 0x34);
-        let mut shmem = SharedMemory::new(mem);
-        assert_eq!(shmem.get(0x12), 0x34);
-        shmem.set(0x56, 0x78);
-        assert_eq!(shmem.get(0x56), 0x78);
+        assert_eq!(mem.get(0x12), 0x34);
+        mem.set(0x56, 0x78);
+        assert_eq!(mem.get(0x56), 0x78);
     }
 
     #[test]
-    fn read_write_cloned () {
-        let mut mem = TestMemory { mem: [0, ..256] };
-        mem.set(0x12, 0x34);
-        let mut shmem1 = SharedMemory::new(mem);
-        let mut shmem2 = shmem1.clone();
-        assert_eq!(shmem2.get(0x12), 0x34);
-        shmem1.set(0x56, 0x78);
-        assert_eq!(shmem2.get(0x56), 0x78);
-        shmem2.set(0x9a, 0xbc);
-        assert_eq!(shmem1.get(0x9a), 0xbc);
+    fn read_write_shared () {
+        let mut mem1 = Rc::new(RefCell::new(TestMemory { mem: [0; 256] }));
+        mem1.set(0x12, 0x34);
+        let mut mem2 = mem1.clone();
+        assert_eq!(mem2.get(0x12), 0x34);
+        mem1.set(0x56, 0x78);
+        assert_eq!(mem2.get(0x56), 0x78);
+        mem2.set(0x9a, 0xbc);
+        assert_eq!(mem1.get(0x9a), 0xbc);
     }
 }

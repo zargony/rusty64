@@ -1,131 +1,155 @@
-use std::{fmt, num};
-use std::mem::size_of;
-use std::num::{Bitwise, Zero};
+use std::{fmt, mem};
+use std::num::{self, Int, UnsignedInt};
 
 /// A trait for all addresses
-pub trait Addr: Unsigned + NumCast + Ord + Bitwise + Clone + fmt::UpperHex {
+pub trait Address: UnsignedInt + fmt::UpperHex {
     /// Calculate new address with given offset
-    fn offset<T: Signed+NumCast> (&self, offset: T) -> Self {
-        if offset.is_negative() {
-            self.sub(&num::cast(offset.abs()).unwrap())     // self - abs(offset)
+    fn offset<T: Int> (self, offset: T) -> Self {
+        if offset < Int::zero() {
+            self - num::cast(Int::zero() - offset).unwrap()
         } else {
-            self.add(&num::cast(offset).unwrap())           // self + offset
+            self + num::cast(offset).unwrap()
         }
     }
 
-    /// Calculate new address with given offset only changing the masked part of the address
-    fn offset_masked<T: Signed+NumCast+Bitwise> (&self, offset: T, mask: &Self) -> Self {
-        // (self & !mask) | (self.offset(offset) & mask)
-        self.bitand(&mask.not()).bitor(&self.offset(offset).bitand(mask))
+    /// Calculate new address with given offset while protecting the masked part of the address
+    fn offset_masked<T: Int> (self, offset: T, mask: Self) -> Self {
+        (self & mask) | (self.offset(offset) & !mask)
+    }
+
+    /// Return an object for displaying the address
+    fn display (self) -> AddressDisplay<Self> {
+        AddressDisplay { addr: self }
+    }
+}
+
+/// Helper object for displaying an address
+pub struct AddressDisplay<A> {
+    addr: A,
+}
+
+impl<A: Address> fmt::Display for AddressDisplay<A> {
+    fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match mem::size_of::<Self>() {
+            1 => write!(f, "${:02X}", self.addr),
+            2 => write!(f, "${:04X}", self.addr),
+            4 => write!(f, "${:08X}", self.addr),
+            _ => write!(f, "${:X}", self.addr),
+        }
     }
 }
 
 // Supported address sizes
-// TODO: Shall we support arbitrary address sizes like u12?
-impl Addr for u8 { }
-impl Addr for u16 { }
-impl Addr for u32 { }
-impl Addr for u64 { }
-
-/// Create a number from bytes in big endian order
-fn number_from_be_bytes<T: Num> (f: |uint| -> u8) -> T {
-    number_from_le_bytes(|i| f(size_of::<T>()-i-1))
-}
-
-/// Create a number from bytes in little endian order
-fn number_from_le_bytes<T: Num> (f: |uint| -> u8) -> T {
-    let mut val: T = Zero::zero();
-    let ptr = &mut val as *mut T as *mut u8;
-    for i in range(0, size_of::<T>()) {
-        unsafe { *(ptr.offset(i as int)) = f(i); }
-    }
-    val
-}
-
-/// Convert a number to bytes in big endian order
-fn number_to_be_bytes<T: Num> (val: T, f: |uint, u8|) {
-    number_to_le_bytes(val, |i, b| f(size_of::<T>()-i-1, b))
-}
-
-/// Convert a number to bytes in little endian order
-fn number_to_le_bytes<T: Num> (val: T, f: |uint, u8|) {
-    let ptr = &val as *T as *u8;
-    for i in range(0, size_of::<T>()) {
-        unsafe { f(i, *(ptr.offset(i as int))); }
-    }
-}
+impl Address for u8 { }
+impl Address for u16 { }
+impl Address for u32 { }
+impl Address for u64 { }
 
 /// A trait for anything that has an address bus and can get/set data. The
 /// data size that can be get/set is u8 always, the address size is given
 /// as a type parameter and can be of any size (typically u16 or u32).
-/// TODO: Support data sizes other than u8?
-pub trait Addressable<A: Addr> {
+pub trait Addressable<A: Address> {
     /// Memory read: returns the data at the given address
     fn get (&self, addr: A) -> u8;
 
+    /// Get a number in host platform byte order format from the given address.
+    /// Note: Don't use this directly, better use `get_be` or `get_le` instead.
+    fn get_number<T: Int> (&self, addr: A, mask: A) -> T {
+        let mut val: T = Int::zero();
+        let size = mem::size_of::<T>() as isize;
+        let ptr = &mut val as *mut T as *mut u8;
+        for i in 0..size {
+            unsafe { *ptr.offset(i) = self.get(addr.offset_masked(i, mask)); }
+        }
+        val
+    }
+
     /// Get a number in big endian format from the given address
-    fn get_be<T: Num> (&self, addr: A) -> T {
-        number_from_be_bytes(|i| self.get(addr.offset(i as int)))
+    fn get_be<T: Int> (&self, addr: A) -> T {
+        Int::from_be(self.get_number(addr, Int::zero()))
     }
 
     /// Get a number in big endian format from the given masked address
-    fn get_be_masked<T: Num> (&self, addr: A, mask: A) -> T {
-        number_from_be_bytes(|i| self.get(addr.offset_masked(i as int, &mask)))
+    fn get_be_masked<T: Int> (&self, addr: A, mask: A) -> T {
+        Int::from_be(self.get_number(addr, mask))
     }
 
     /// Get a number in little endian format from the given address
-    fn get_le<T: Num> (&self, addr: A) -> T {
-        number_from_le_bytes(|i| self.get(addr.offset(i as int)))
+    fn get_le<T: Int> (&self, addr: A) -> T {
+        Int::from_le(self.get_number(addr, Int::zero()))
     }
 
     /// Get a number in little endian format from the given masked address
-    fn get_le_masked<T: Num> (&self, addr: A, mask: A) -> T {
-        number_from_le_bytes(|i| self.get(addr.offset_masked(i as int, &mask)))
+    fn get_le_masked<T: Int> (&self, addr: A, mask: A) -> T {
+        Int::from_le(self.get_number(addr, mask))
     }
 
     /// Memory write: set the data at the given address
     fn set (&mut self, addr: A, data: u8);
 
+    /// Store a number in host platform byte order format to the given address.
+    /// Note: Don't use this directly, better use `set_be` or `set_le` instead.
+    fn set_number<T: Int> (&mut self, addr: A, mask: A, val: T) {
+        let size = mem::size_of::<T>() as isize;
+        let ptr = &val as *const T as *const u8;
+        for i in 0..size {
+            unsafe { self.set(addr.offset_masked(i, mask), *ptr.offset(i)); }
+        }
+    }
+
     /// Store a number in big endian format to the given address
-    fn set_be<T: Num> (&mut self, addr: A, val: T) {
-        number_to_be_bytes(val, |i, b| self.set(addr.offset(i as int), b));
+    fn set_be<T: Int> (&mut self, addr: A, val: T) {
+        self.set_number(addr, Int::zero(), Int::to_be(val));
     }
 
     /// Store a number in big endian format to the given masked address
-    fn set_be_masked<T: Num> (&mut self, addr: A, mask: A, val: T) {
-        number_to_be_bytes(val, |i, b| self.set(addr.offset_masked(i as int, &mask), b));
+    fn set_be_masked<T: Int> (&mut self, addr: A, mask: A, val: T) {
+        self.set_number(addr, mask, Int::to_be(val));
     }
 
     /// Store a number in little endian format to the given address
-    fn set_le<T: Num> (&mut self, addr: A, val: T) {
-        number_to_le_bytes(val, |i, b| self.set(addr.offset(i as int), b));
+    fn set_le<T: Int> (&mut self, addr: A, val: T) {
+        self.set_number(addr, Int::zero(), Int::to_le(val));
     }
 
     /// Store a number in little endian format to the given masked address
-    fn set_le_masked<T: Num> (&mut self, addr: A, mask: A, val: T) {
-        number_to_le_bytes(val, |i, b| self.set(addr.offset_masked(i as int, &mask), b));
+    fn set_le_masked<T: Int> (&mut self, addr: A, mask: A, val: T) {
+        self.set_number(addr, mask, Int::to_le(val));
     }
 
-    /// Build a hexdump string of the given address range
-    fn hexdump (&self, addr1: A, addr2: A) -> StrBuf {
-        let mut addr = addr1;
-        let mut s = StrBuf::new();
-        while addr < addr2 {
-            if s.len() > 0 { s.push_str(" "); }
-            s.push_str(format!("{:02X}", self.get(addr.clone())));
-            addr = addr.offset(1);
+    /// Copy data from another addressable source
+    fn copy<M: Addressable<A>> (&mut self, self_addr: A, other: &M, other_addr: A, size: usize) {
+        for i in 0..size {
+            self.set(self_addr.offset(i), other.get(other_addr.offset(i)))
         }
-        s
+    }
+
+    /// Return an object for displaying a hexdump of the given address range
+    fn hexdump (&self, addr1: A, addr2: A) -> HexDump<A, Self> {
+        HexDump { mem: self, addr1: addr1, addr2: addr2 }
+    }
+}
+
+/// Helper object for displaying a hexdump of an address range
+pub struct HexDump<'a, A, M: 'a + ?Sized> {
+    mem: &'a M,
+    addr1: A,
+    addr2: A,
+}
+
+impl<'a, A: Address, M: Addressable<A>> fmt::Display for HexDump<'a, A, M> {
+    fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for addr in self.addr1..self.addr2 {
+            try!(write!(f, "{:02X} ", self.mem.get(addr)));
+        }
+        write!(f, "{:02X}", self.mem.get(self.addr2))
     }
 }
 
 
 #[cfg(test)]
 mod test {
-    use std::fmt;
-    use super::{number_from_be_bytes, number_from_le_bytes};
-    use super::{number_to_be_bytes, number_to_le_bytes};
-    use super::{Addr, Addressable};
+    use super::{Address, Addressable};
 
     #[test]
     fn address_offset () {
@@ -137,68 +161,16 @@ mod test {
 
     #[test]
     fn address_offset_masked () {
-        assert_eq!(0x12ff_u16.offset_masked( 1, &0xffff), 0x1300_u16);
-        assert_eq!(0x12ff_u16.offset_masked( 1, &0x00ff), 0x1200_u16);
-        assert_eq!(0x1300_u16.offset_masked(-1, &0xffff), 0x12ff_u16);
-        assert_eq!(0x1300_u16.offset_masked(-1, &0x00ff), 0x13ff_u16);
-    }
-
-    fn test_convert_from_bytes<T: Num+fmt::Show> (convert: |f: |uint| -> u8| -> T, val: T, data: &[u8]) {
-        assert_eq!(val, convert(|i| data[i]));
+        assert_eq!(0x12ff_u16.offset_masked( 1, 0x0000), 0x1300_u16);
+        assert_eq!(0x12ff_u16.offset_masked( 1, 0xff00), 0x1200_u16);
+        assert_eq!(0x1300_u16.offset_masked(-1, 0x0000), 0x12ff_u16);
+        assert_eq!(0x1300_u16.offset_masked(-1, 0xff00), 0x13ff_u16);
     }
 
     #[test]
-    fn convert_from_big_endian () {
-        test_convert_from_bytes(number_from_be_bytes,        0x12_u8 , [0x12]                  );
-        test_convert_from_bytes(number_from_be_bytes,        0x98_u8 , [0x98]                  );
-        test_convert_from_bytes(number_from_be_bytes,  0x12345678_u32, [0x12, 0x34, 0x56, 0x78]);
-        test_convert_from_bytes(number_from_be_bytes,  0x98765432_u32, [0x98, 0x76, 0x54, 0x32]);
-        test_convert_from_bytes(number_from_be_bytes,        0x12_i8 , [0x12]                  );
-        test_convert_from_bytes(number_from_be_bytes,       -0x68_i8 , [0x98]                  );
-        test_convert_from_bytes(number_from_be_bytes,  0x12345678_i32, [0x12, 0x34, 0x56, 0x78]);
-        test_convert_from_bytes(number_from_be_bytes, -0x6789abce_i32, [0x98, 0x76, 0x54, 0x32]);
-    }
-
-    #[test]
-    fn convert_from_little_endian () {
-        test_convert_from_bytes(number_from_le_bytes,        0x12_u8 , [0x12]                  );
-        test_convert_from_bytes(number_from_le_bytes,        0x98_u8 , [0x98]                  );
-        test_convert_from_bytes(number_from_le_bytes,  0x12345678_u32, [0x78, 0x56, 0x34, 0x12]);
-        test_convert_from_bytes(number_from_le_bytes,  0x98765432_u32, [0x32, 0x54, 0x76, 0x98]);
-        test_convert_from_bytes(number_from_le_bytes,        0x12_i8 , [0x12]                  );
-        test_convert_from_bytes(number_from_le_bytes,       -0x68_i8 , [0x98]                  );
-        test_convert_from_bytes(number_from_le_bytes,  0x12345678_i32, [0x78, 0x56, 0x34, 0x12]);
-        test_convert_from_bytes(number_from_le_bytes, -0x6789abce_i32, [0x32, 0x54, 0x76, 0x98]);
-    }
-
-    fn test_convert_to_bytes<T: Num> (convert: |T, |uint, u8||, val: T, data: &[u8]) {
-        let mut d = [0u8, ..16];
-        convert(val, |i, b| d[i] = b);
-        assert_eq!(d.slice_to(data.len()), data);
-    }
-
-    #[test]
-    fn convert_to_big_endian () {
-        test_convert_to_bytes(number_to_be_bytes,        0x12_u8 , [0x12]                  );
-        test_convert_to_bytes(number_to_be_bytes,        0x98_u8 , [0x98]                  );
-        test_convert_to_bytes(number_to_be_bytes,  0x12345678_u32, [0x12, 0x34, 0x56, 0x78]);
-        test_convert_to_bytes(number_to_be_bytes,  0x98765432_u32, [0x98, 0x76, 0x54, 0x32]);
-        test_convert_to_bytes(number_to_be_bytes,        0x12_i8 , [0x12]                  );
-        test_convert_to_bytes(number_to_be_bytes,       -0x68_i8 , [0x98]                  );
-        test_convert_to_bytes(number_to_be_bytes,  0x12345678_i32, [0x12, 0x34, 0x56, 0x78]);
-        test_convert_to_bytes(number_to_be_bytes, -0x6789abce_i32, [0x98, 0x76, 0x54, 0x32]);
-    }
-
-    #[test]
-    fn convert_to_little_endian () {
-        test_convert_to_bytes(number_to_le_bytes,        0x12_u8 , [0x12]                  );
-        test_convert_to_bytes(number_to_le_bytes,        0x98_u8 , [0x98]                  );
-        test_convert_to_bytes(number_to_le_bytes,  0x12345678_u32, [0x78, 0x56, 0x34, 0x12]);
-        test_convert_to_bytes(number_to_le_bytes,  0x98765432_u32, [0x32, 0x54, 0x76, 0x98]);
-        test_convert_to_bytes(number_to_le_bytes,        0x12_i8 , [0x12]                  );
-        test_convert_to_bytes(number_to_le_bytes,       -0x68_i8 , [0x98]                  );
-        test_convert_to_bytes(number_to_le_bytes,  0x12345678_i32, [0x78, 0x56, 0x34, 0x12]);
-        test_convert_to_bytes(number_to_le_bytes, -0x6789abce_i32, [0x32, 0x54, 0x76, 0x98]);
+    fn address_display () {
+        assert_eq!(format!("{}", 0x0f_u8.display()), "$0F");
+        assert_eq!(format!("{}", 0x01ff_u16.display()), "$01FF");
     }
 
     struct DummyData;
@@ -239,8 +211,8 @@ mod test {
     #[test]
     fn get_masked_big_endian_number () {
         let data = DummyData;
-        assert_eq!(    0xff00_u16, data.get_be_masked(0x12ff_u16, 0x00ff));
-        assert_eq!(0xfeff0001_u32, data.get_be_masked(0x12fe_u16, 0x00ff));
+        assert_eq!(    0xff00_u16, data.get_be_masked(0x12ff_u16, 0xff00));
+        assert_eq!(0xfeff0001_u32, data.get_be_masked(0x12fe_u16, 0xff00));
     }
 
     #[test]
@@ -268,8 +240,8 @@ mod test {
     #[test]
     fn get_masked_little_endian_number () {
         let data = DummyData;
-        assert_eq!(    0x00ff_u16, data.get_le_masked(0x12ff_u16, 0x00ff));
-        assert_eq!(0x0100fffe_u32, data.get_le_masked(0x12fe_u16, 0x00ff));
+        assert_eq!(    0x00ff_u16, data.get_le_masked(0x12ff_u16, 0xff00));
+        assert_eq!(0x0100fffe_u32, data.get_le_masked(0x12fe_u16, 0xff00));
     }
 
     #[test]
@@ -304,8 +276,8 @@ mod test {
     #[test]
     fn set_masked_big_endian_number () {
         let mut data = DummyData;
-        data.set_be_masked(0x12ff_u16, 0x00ff,     0xff00_u16);
-        data.set_be_masked(0x12fe_u16, 0x00ff, 0xfeff0001_u32);
+        data.set_be_masked(0x12ff_u16, 0xff00,     0xff00_u16);
+        data.set_be_masked(0x12fe_u16, 0xff00, 0xfeff0001_u32);
     }
 
     #[test]
@@ -333,15 +305,22 @@ mod test {
     #[test]
     fn set_masked_little_endian_number () {
         let mut data = DummyData;
-        data.set_le_masked(0x12ff_u16, 0x00ff,     0x00ff_u16);
-        data.set_le_masked(0x12fe_u16, 0x00ff, 0x0100fffe_u32);
+        data.set_le_masked(0x12ff_u16, 0xff00,     0x00ff_u16);
+        data.set_le_masked(0x12fe_u16, 0xff00, 0x0100fffe_u32);
+    }
+
+    #[test]
+    fn copying_memory () {
+        let data1 = DummyData;
+        let mut data2 = DummyData;
+        data2.copy(0x8000_u16, &data1, 0x0000_u16, 0x1000);
     }
 
     #[test]
     fn dumping_memory () {
         let data = DummyData;
-        assert_eq!(data.hexdump(0x0100_u16, 0x0100_u16).as_slice(), "");
-        assert_eq!(data.hexdump(0x0100_u16, 0x0101_u16).as_slice(), "00");
-        assert_eq!(data.hexdump(0x0100_u16, 0x0105_u16).as_slice(), "00 01 02 03 04");
+        assert_eq!(format!("{}", data.hexdump(0x0100_u16, 0x0100_u16)), "00");
+        assert_eq!(format!("{}", data.hexdump(0x0100_u16, 0x0101_u16)), "00 01");
+        assert_eq!(format!("{}", data.hexdump(0x0100_u16, 0x0105_u16)), "00 01 02 03 04 05");
     }
 }
