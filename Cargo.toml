@@ -12,6 +12,7 @@ license = "MIT"
 [dependencies]
 log = "*"
 rand = "*"
+#sdl2 = "*"
 
 [[bin]]
 name = "c64"

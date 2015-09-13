@@ -52,60 +52,74 @@ impl Instruction {
         match *self {
             // Load/store operations
             LDA => {                                // load accumulator [N,Z]
-                cpu.ac = operand.get(cpu);
-                cpu.set_zn(cpu.ac);
+                let result = operand.get(cpu);
+                cpu.ac = result;
+                cpu.set_zn(result);
             },
             LDX => {                                // load X register [N,Z]
-                cpu.x = operand.get(cpu);
-                cpu.set_zn(cpu.x);
+                let result = operand.get(cpu);
+                cpu.x = result;
+                cpu.set_zn(result);
             },
             LDY => {                                // load Y register [N,Z]
-                cpu.y = operand.get(cpu);
-                cpu.set_zn(cpu.y);
+                let result = operand.get(cpu);
+                cpu.y = result;
+                cpu.set_zn(result);
             },
             STA => {                                // store accumulator
-                operand.set(cpu, cpu.ac);
+                let result = cpu.ac;
+                operand.set(cpu, result);
             },
             STX => {                                // store X register
-                operand.set(cpu, cpu.x);
+                let result = cpu.x;
+                operand.set(cpu, result);
             },
             STY => {                                // store Y register
-                operand.set(cpu, cpu.y);
+                let result = cpu.y;
+                operand.set(cpu, result);
             },
             // Register transfers
             TAX => {                                // transfer accumulator to X [N,Z]
-                cpu.x = cpu.ac;
-                cpu.set_zn(cpu.x);
+                let result = cpu.ac;
+                cpu.x = result;
+                cpu.set_zn(result);
             },
             TAY => {                                // transfer accumulator to Y [N,Z]
-                cpu.y = cpu.ac;
-                cpu.set_zn(cpu.y);
+                let result = cpu.ac;
+                cpu.y = result;
+                cpu.set_zn(result);
             },
             TXA => {                                // transfer X to accumulator [N,Z]
-                cpu.ac = cpu.x;
-                cpu.set_zn(cpu.ac);
+                let result = cpu.x;
+                cpu.ac = result;
+                cpu.set_zn(result);
             },
             TYA => {                                // transfer Y to accumulator [N,Z]
-                cpu.ac = cpu.y;
-                cpu.set_zn(cpu.ac);
+                let result = cpu.y;
+                cpu.ac = result;
+                cpu.set_zn(result);
             },
             // Stack operations
             TSX => {                                // transfer stack pointer to X [N,Z]
-                cpu.x = cpu.sp;
-                cpu.set_zn(cpu.x);
+                let result = cpu.sp;
+                cpu.x = result;
+                cpu.set_zn(result);
             },
             TXS => {                                // transfer X to stack pointer
                 cpu.sp = cpu.x;
             },
             PHA => {                                // push accumulator on stack
-                cpu.push(cpu.ac);
+                let result = cpu.ac;
+                cpu.push(result);
             },
             PHP => {                                // push processor status (SR) on stack
-                cpu.push(cpu.sr);
+                let result = cpu.sr;
+                cpu.push(result);
             },
             PLA => {                                // pull accumulator from stack [N,Z]
-                cpu.ac = cpu.pop();
-                cpu.set_zn(cpu.ac);
+                let result = cpu.pop();
+                cpu.ac = result;
+                cpu.set_zn(result);
             },
             PLP => {                                // pull processor status (SR) from stack [all]
                 cpu.sr = cpu.pop();
@@ -113,16 +127,19 @@ impl Instruction {
             },
             // Logical
             AND => {                                // logical AND [N,Z]
-                cpu.ac &= operand.get(cpu);
-                cpu.set_zn(cpu.ac);
+                let result = cpu.ac & operand.get(cpu);
+                cpu.ac = result;
+                cpu.set_zn(result);
             },
             EOR => {                                // logical exclusive OR [N,Z]
-                cpu.ac ^= operand.get(cpu);
-                cpu.set_zn(cpu.ac);
+                let result = cpu.ac ^ operand.get(cpu);
+                cpu.ac = result;
+                cpu.set_zn(result);
             },
             ORA => {                                // logical inclusive OR [N,Z]
-                cpu.ac |= operand.get(cpu);
-                cpu.set_zn(cpu.ac);
+                let result = cpu.ac | operand.get(cpu);
+                cpu.ac = result;
+                cpu.set_zn(result);
             },
             BIT => {                                // bit test [N,V,Z]
                 let value = operand.get(cpu);
@@ -140,7 +157,7 @@ impl Instruction {
                 let result = result as u8;
                 cpu.set_flag(OverflowFlag, (cpu.ac ^ value) & 0x80 == 0 && (cpu.ac ^ result) & 0x80 == 0x80);
                 cpu.ac = result;
-                cpu.set_zn(cpu.ac);
+                cpu.set_zn(result);
             },
             SBC => {                                // subtract with carry [N,V,Z,C]
                 if cpu.get_flag(DecimalFlag) { panic!("mos6502: Decimal mode SBC not supported yet :("); }
@@ -151,7 +168,7 @@ impl Instruction {
                 let result = result as u8;
                 cpu.set_flag(OverflowFlag, (cpu.ac ^ result) & 0x80 != 0 && (cpu.ac ^ value) & 0x80 == 0x80);
                 cpu.ac = result;
-                cpu.set_zn(cpu.ac);
+                cpu.set_zn(result);
             },
             CMP => {                                // compare (with accumulator) [N,Z,C]
                 let result = cpu.ac as i16 - operand.get(cpu) as i16;
@@ -175,25 +192,29 @@ impl Instruction {
                 cpu.set_zn(value);
             },
             INX => {                                // increment X register [N,Z]
-                cpu.x += 1;
-                cpu.set_zn(cpu.x);
+                let result = cpu.x + 1;
+                cpu.x = result;
+                cpu.set_zn(result);
             },
             INY => {                                // increment Y register [N,Z]
-                cpu.y += 1;
-                cpu.set_zn(cpu.y);
+                let result = cpu.y + 1;
+                cpu.y = result;
+                cpu.set_zn(result);
             },
             DEC => {                                // decrement a memory location [N,Z]
-                let value = operand.get(cpu) - 1;
-                operand.set(cpu, value);
-                cpu.set_zn(value);
+                let result = operand.get(cpu) - 1;
+                operand.set(cpu, result);
+                cpu.set_zn(result);
             },
             DEX => {                                // decrement X register [N,Z]
-                cpu.x -= 1;
-                cpu.set_zn(cpu.x);
+                let result = cpu.x - 1;
+                cpu.x = result;
+                cpu.set_zn(result);
             },
             DEY => {                                // decrement Y register [N,Z]
-                cpu.y -= 1;
-                cpu.set_zn(cpu.y);
+                let result = cpu.y - 1;
+                cpu.y = result;
+                cpu.set_zn(result);
             },
             // Shifts
             ASL => {                                // arithmetic shift left [N,Z,C]
@@ -234,7 +255,7 @@ impl Instruction {
             },
             JSR => {                                // jump to a subroutine
                 // Push the address of the last byte of this instruction to the
-                // stack instead of the address of the next isntruction.
+                // stack instead of the address of the next instruction.
                 cpu.push(cpu.pc - 1);
                 cpu.pc = operand.addr(cpu);
             },
@@ -384,7 +405,7 @@ impl Operand {
             ZeroPageIndexedWithX(addr)          => (addr + cpu.x) as u16,                       // no page transition
             ZeroPageIndexedWithY(addr)          => (addr + cpu.y) as u16,                       // no page transition
             ZeroPageIndexedWithXIndirect(addr)  => cpu.mem.get_le((addr + cpu.x) as u16),       // no page transition
-            ZeroPageIndirectIndexedWithY(addr)  => cpu.mem.get_le::<u16>(addr as u16) + cpu.y as u16,
+            ZeroPageIndirectIndexedWithY(addr)  => cpu.mem.get_le(addr as u16) + cpu.y as u16,
         }
     }
 
@@ -415,7 +436,7 @@ impl fmt::Display for Operand {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Implied                             => write!(f, ""),
-            Immediate(value)                    => write!(f, "\\#${:02X}", value),
+            Immediate(value)                    => write!(f, "#${:02X}", value),
             Accumulator                         => write!(f, "A"),
             Relative(offset)                    => write!(f, "{:+}", offset),
             Absolute(addr)                      => write!(f, "{}", addr.display()),
