@@ -14,6 +14,7 @@
 extern crate env_logger;
 extern crate num;
 
+mod mem;
 
 #[cfg(not(test))]
 fn main() {
