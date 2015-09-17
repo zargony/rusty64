@@ -10,10 +10,6 @@ keywords = ["emulator", "8bit"]
 license = "MIT"
 
 [dependencies]
-log = "*"
-rand = "*"
-#sdl2 = "*"
-
-[[bin]]
-name = "c64"
-path = "src/main.rs"
+log = "0.3"
+env_logger = "0.3"
+num = "0.1"
