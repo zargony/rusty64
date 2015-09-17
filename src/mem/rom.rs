@@ -1,8 +1,8 @@
-use std::{env, num};
+use std::env;
 use std::io::Read;
 use std::fs::File;
-// FIXME: Remove import of std::path::Path once it landed in the prelude
-use std::path::{Path, AsPath};
+use std::path::Path;
+use num;
 use super::{Address, Addressable};
 
 /// Generic read-only memory (ROM)
@@ -13,20 +13,20 @@ pub struct Rom<A> {
 
 impl<A: Address> Rom<A> {
     /// Create new ROM with contents of the given file
-    pub fn new<P: AsPath + ?Sized> (path: &P) -> Rom<A> {
-        // FIXME: Remove explicit Path::new once std::env uses the new std::path module
-        let filename = Path::new(&env::current_dir().unwrap()).join("share").join(path);
+    pub fn new<P: AsRef<Path>> (path: P) -> Rom<A> {
+        let filename = env::current_dir().unwrap().join("share").join(path);
         info!("rom: Loading ROM from {}", filename.display());
         let mut data = Vec::new();
         let mut f = match File::open(&filename) {
             Err(err) => panic!("rom: Unable to open ROM: {}", err),
             Ok(f) => f,
         };
-        match f.read_to_end(&mut data) {
+        let len = match f.read_to_end(&mut data) {
             Err(err) => panic!("rom: Unable to load ROM: {}", err),
-            Ok(()) => assert!(data.len() > 0, "rom: Unable to load empty ROM"),
-        }
-        let last_addr: A = num::cast(data.len() - 1).unwrap();
+            Ok(0) => panic!("rom: Unable to load empty ROM"),
+            Ok(len) => len,
+        };
+        let last_addr: A = num::cast(len - 1).unwrap();
         Rom { data: data, last_addr: last_addr }
     }
 
@@ -53,9 +53,9 @@ impl<A: Address> Addressable<A> for Rom<A> {
 
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::super::Addressable;
-    use super::Rom;
+    use super::*;
 
     #[test]
     fn create_with_file_contents () {

@@ -13,6 +13,7 @@
 #[macro_use] extern crate log;
 extern crate env_logger;
 extern crate num;
+extern crate rand;
 
 mod mem;
 

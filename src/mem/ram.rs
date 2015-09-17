@@ -1,6 +1,5 @@
+use num;
 use rand;
-use std::iter;
-use std::num::{self, Int};
 use super::{Address, Addressable};
 
 /// Generic read/write memory (RAM)
@@ -13,14 +12,13 @@ impl<A: Address> Ram<A> {
     /// Create new RAM with full capacity of its address range. The whole
     /// address space is filled with random bytes initially.
     pub fn new () -> Ram<A> {
-        Ram::with_capacity(Int::max_value())
+        Ram::with_capacity(A::max_value())
     }
 
     /// Create new RAM which will be addressable from 0 to the given address.
     /// The whole address space is filled with random bytes initially.
     pub fn with_capacity (last_addr: A) -> Ram<A> {
-        // FIXME: Use range notation instead of calling iter::range_inclusive
-        let data: Vec<u8> = iter::range_inclusive(Int::zero(), last_addr).map(|_| rand::random()).collect();
+        let data = num::range_inclusive(A::zero(), last_addr).map(|_| rand::random()).collect();
         Ram { data: data, last_addr: last_addr }
     }
 
@@ -51,9 +49,9 @@ impl<A: Address> Addressable<A> for Ram<A> {
 
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::super::Addressable;
-    use super::Ram;
+    use super::*;
 
     #[test]
     fn create_with_full_addressable_capacity () {
@@ -63,7 +61,7 @@ mod test {
 
     #[test]
     fn create_with_requested_capacity () {
-        let memory: Ram<u16> = Ram::with_capacity(0x03ff_u16);
+        let memory: Ram<u16> = Ram::with_capacity(0x03ff);
         assert_eq!(memory.capacity(), 1024);
     }
 
