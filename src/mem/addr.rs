@@ -45,15 +45,15 @@ impl Address for u16 { }
 impl Address for u32 { }
 impl Address for u64 { }
 
-/// A trait for anything that has an address bus and can get/set data. The
-/// data size that can be get/set is u8 always, the address size is given
-/// as a type parameter and can be of any size (typically u16 or u32).
+/// A trait for anything that has an address bus and can get/set data. The data size that can be
+/// get/set is u8 always, the address size is given as a type parameter and can be of any size
+/// (typically u16 or u32).
 pub trait Addressable<A: Address> {
     /// Memory read: returns the data at the given address
     fn get (&self, addr: A) -> u8;
 
-    /// Get a number in host platform byte order format from the given address.
-    /// Note: Don't use this directly, better use `get_be` or `get_le` instead.
+    /// Get a number in host platform byte order format from the given address. Note: Don't use
+    /// this directly, better use `get_be` or `get_le` instead.
     fn get_number<T: PrimInt> (&self, addr: A, mask: A) -> T {
         let mut val: T = T::zero();
         let size = mem::size_of::<T>() as isize;
@@ -87,8 +87,8 @@ pub trait Addressable<A: Address> {
     /// Memory write: set the data at the given address
     fn set (&mut self, addr: A, data: u8);
 
-    /// Store a number in host platform byte order format to the given address.
-    /// Note: Don't use this directly, better use `set_be` or `set_le` instead.
+    /// Store a number in host platform byte order format to the given address. Note: Don't use
+    /// this directly, better use `set_be` or `set_le` instead.
     fn set_number<T: PrimInt> (&mut self, addr: A, mask: A, val: T) {
         let size = mem::size_of::<T>() as isize;
         let ptr = &val as *const T as *const u8;

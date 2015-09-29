@@ -9,14 +9,14 @@ pub struct Ram<A> {
 }
 
 impl<A: Address> Ram<A> {
-    /// Create new RAM with full capacity of its address range. The whole
-    /// address space is filled with random bytes initially.
+    /// Create new RAM with full capacity of its address range. The whole address space is filled
+    /// with random bytes initially.
     pub fn new () -> Ram<A> {
         Ram::with_capacity(A::max_value())
     }
 
-    /// Create new RAM which will be addressable from 0 to the given address.
-    /// The whole address space is filled with random bytes initially.
+    /// Create new RAM which will be addressable from 0 to the given address. The whole address
+    /// space is filled with random bytes initially.
     pub fn with_capacity (last_addr: A) -> Ram<A> {
         let data = num::range_inclusive(A::zero(), last_addr).map(|_| rand::random()).collect();
         Ram { data: data, last_addr: last_addr }
