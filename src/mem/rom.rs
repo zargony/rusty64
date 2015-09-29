@@ -1,3 +1,7 @@
+//!
+//! Read Only Memory (ROM)
+//!
+
 use std::env;
 use std::io::Read;
 use std::fs::File;

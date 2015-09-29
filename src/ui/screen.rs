@@ -1,3 +1,7 @@
+//!
+//! Display/screen interface
+//!
+
 // FIXME: UI is hard to test (and optional), so there are no tests yet
 #![allow(dead_code)]
 

@@ -1,3 +1,7 @@
+//!
+//! Random Access Memory (RAM)
+//!
+
 use num;
 use rand;
 use super::{Address, Addressable};

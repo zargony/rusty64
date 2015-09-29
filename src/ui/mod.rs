@@ -1,3 +1,7 @@
+//!
+//! User Inteface handling
+//!
+
 extern crate sdl2;
 
 pub use self::screen::Screen;

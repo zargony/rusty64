@@ -1,14 +1,17 @@
-// General information on 65xx: http://en.wikipedia.org/wiki/MOS_Technology_6510
-// Useful emulator information: http://emudocs.org/?page=CPU%2065xx
-// Web simulator and much info: http://e-tradition.net/bytes/6502/
-// Good reference and overview: http://www.obelisk.demon.co.uk/index.html
-// Processor bugs and caveats : http://www.textfiles.com/apple/6502.bugs.txt
-// Emulator and test resources: http://www.6502.org/tools/emu/
-
-// Test ROMs: http://wiki.nesdev.com/w/index.php/Emulator_tests#CPU
-//            http://www.6502.org/tools/emu/
-//            http://visual6502.org/wiki/index.php?title=6502TestPrograms
-//            http://forum.6502.org/viewtopic.php?f=2&t=2241
+//!
+//! MOS 6502
+//!
+//! General information on 65xx: http://en.wikipedia.org/wiki/MOS_Technology_6510
+//! Useful emulator information: http://emudocs.org/?page=CPU%2065xx
+//! Web simulator and much info: http://e-tradition.net/bytes/6502/
+//! Good reference and overview: http://www.obelisk.demon.co.uk/index.html
+//! Processor bugs and caveats : http://www.textfiles.com/apple/6502.bugs.txt
+//! Emulator and test resources: http://www.6502.org/tools/emu/
+//!
+//! Test ROMs: http://wiki.nesdev.com/w/index.php/Emulator_tests#CPU
+//!            http://www.6502.org/tools/emu/
+//!            http://visual6502.org/wiki/index.php?title=6502TestPrograms
+//!            http://forum.6502.org/viewtopic.php?f=2&t=2241
 
 use std::fmt;
 use std::mem::size_of;

@@ -1,3 +1,7 @@
+//!
+//! Generic address handling
+//!
+
 use std::{fmt, mem};
 use num::{self, Integer, NumCast, PrimInt};
 

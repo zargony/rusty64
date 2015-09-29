@@ -1,3 +1,7 @@
+//!
+//! MOS 6510
+//!
+
 use mem::Addressable;
 use super::{CPU, Mos6502};
 

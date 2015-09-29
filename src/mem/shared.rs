@@ -1,3 +1,7 @@
+//!
+//! Generic implementations for shared (wrapped) addressable objects
+//!
+
 use std::cell::RefCell;
 use std::rc::Rc;
 use super::{Address, Addressable};
