@@ -14,7 +14,7 @@ impl<A: Address, M: Addressable<A>> Addressable<A> for Rc<RefCell<M>> {
 
 
 #[cfg(test)]
-mod test {
+mod tests {
     use std::cell::RefCell;
     use std::rc::Rc;
     use super::super::Addressable;

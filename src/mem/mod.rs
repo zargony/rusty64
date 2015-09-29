@@ -5,3 +5,4 @@ pub use self::rom::Rom;
 mod addr;
 mod ram;
 mod rom;
+mod shared;
