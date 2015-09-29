@@ -10,7 +10,8 @@
 
 #![warn(missing_docs, bad_style, unused)]
 
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 extern crate env_logger;
 extern crate num;
 extern crate rand;

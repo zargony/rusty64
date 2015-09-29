@@ -810,18 +810,13 @@ impl<M: Addressable<u16>> CPU for Mos6502<M> {
 #[cfg(test)]
 mod test {
     use mem::{Address, Addressable, Ram, Rom};
+    use mem::test::TestMemory;
     use super::super::CPU;
     use super::Instruction::LDA;
     use super::Operand::*;
     use super::StatusFlag::*;
     use super::Mos6502;
 
-    /// Test-memory that returns/expects the lower nibble of the address as data
-    struct TestMemory;
-    impl Addressable<u16> for TestMemory {
-        fn get (&self, addr: u16) -> u8 { addr as u8 }
-        fn set (&mut self, addr: u16, data: u8) { assert_eq!(data, addr as u8); }
-    }
 
     /// Test-memory that returns/expects the sum of the lower and higher nibble of the address as data
     struct SpecialTestMemory;

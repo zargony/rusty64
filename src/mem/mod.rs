@@ -10,3 +10,6 @@ mod addr;
 mod ram;
 mod rom;
 mod shared;
+
+#[cfg(test)]
+pub mod test;

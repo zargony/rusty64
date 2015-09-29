@@ -49,15 +49,9 @@ impl<M: Addressable<u16>> CPU for Mos6510<M> {
 #[cfg(test)]
 mod test {
     use mem::Addressable;
+    use mem::test::TestMemory;
     use super::super::CPU;
     use super::Mos6510;
-
-    /// Test-memory that returns/expects the lower nibble of the address as data
-    struct TestMemory;
-    impl Addressable<u16> for TestMemory {
-        fn get (&self, addr: u16) -> u8 { addr as u8 }
-        fn set (&mut self, addr: u16, data: u8) { assert_eq!(data, addr as u8); }
-    }
 
     #[test]
     fn smoke () {
