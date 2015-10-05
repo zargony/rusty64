@@ -1,6 +1,6 @@
 [package]
 name = "rusty64"
-version = "0.0.1"
+version = "0.0.3"
 authors = ["Andreas Neuhaus <zargony@zargony.com>"]
 description = "Emulator platform for 8-bit computers"
 homepage = "https://github.com/zargony/rusty64"
