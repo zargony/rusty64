@@ -47,7 +47,6 @@ impl<'a, A: Address> fmt::Display for AddressDisplay<'a, A> {
 impl Address for u8 { }
 impl Address for u16 { }
 impl Address for u32 { }
-impl Address for u64 { }
 
 /// A trait for anything that has an address bus and can get/set data. The data size that can be
 /// get/set is u8 always, the address size is given as a type parameter and can be of any size
