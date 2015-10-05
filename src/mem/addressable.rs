@@ -1,52 +1,10 @@
 //!
-//! Generic address handling
+//! Generic addressing
 //!
 
 use std::{fmt, mem};
-use num::{self, Integer, NumCast, PrimInt};
-
-/// A trait for all addresses
-pub trait Address: PrimInt + fmt::UpperHex {
-    /// Calculate new address with given offset
-    fn offset<T: Integer + NumCast> (self, offset: T) -> Self {
-        if offset < T::zero() {
-            self - num::cast(T::zero() - offset).unwrap()
-        } else {
-            self + num::cast(offset).unwrap()
-        }
-    }
-
-    /// Calculate new address with given offset while protecting the masked part of the address
-    fn offset_masked<T: Integer + NumCast> (self, offset: T, mask: Self) -> Self {
-        (self & mask) | (self.offset(offset) & !mask)
-    }
-
-    /// Return an object for displaying the address
-    fn display (&self) -> AddressDisplay<Self> {
-        AddressDisplay { addr: self }
-    }
-}
-
-/// Helper object for displaying an address
-pub struct AddressDisplay<'a, A: 'a> {
-    addr: &'a A,
-}
-
-impl<'a, A: Address> fmt::Display for AddressDisplay<'a, A> {
-    fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match mem::size_of::<A>() {
-            1 => write!(f, "${:02X}", self.addr),
-            2 => write!(f, "${:04X}", self.addr),
-            4 => write!(f, "${:08X}", self.addr),
-            _ => write!(f, "${:X}", self.addr),
-        }
-    }
-}
-
-// Supported address sizes
-impl Address for u8 { }
-impl Address for u16 { }
-impl Address for u32 { }
+use num::{self, PrimInt};
+use super::Address;
 
 /// A trait for anything that has an address bus and can get/set data. The data size that can be
 /// get/set is u8 always, the address size is given as a type parameter and can be of any size
@@ -154,33 +112,6 @@ impl<'a, A: Address, M: Addressable<A>> fmt::Display for HexDump<'a, A, M> {
 mod tests {
     use super::super::test::TestMemory;
     use super::*;
-
-    #[test]
-    fn address_offset () {
-        assert_eq!(0x1234_u16.offset( 5), 0x1239);
-        assert_eq!(0x1234_u16.offset(-3), 0x1231);
-    }
-
-    // FIXME: Addresses are supposed to wrap on overflow
-    // #[test]
-    // fn address_offset_overflow () {
-    //     assert_eq!(0xffff_u16.offset( 1), 0x0000);
-    //     assert_eq!(0x0000_u16.offset(-1), 0xffff);
-    // }
-
-    #[test]
-    fn address_offset_masked () {
-        assert_eq!(0x12ff_u16.offset_masked( 1, 0x0000), 0x1300);
-        assert_eq!(0x12ff_u16.offset_masked( 1, 0xff00), 0x1200);
-        assert_eq!(0x1300_u16.offset_masked(-1, 0x0000), 0x12ff);
-        assert_eq!(0x1300_u16.offset_masked(-1, 0xff00), 0x13ff);
-    }
-
-    #[test]
-    fn address_display () {
-        assert_eq!(format!("{}", 0x0f_u8.display()), "$0F");
-        assert_eq!(format!("{}", 0x01ff_u16.display()), "$01FF");
-    }
 
     #[test]
     fn get_byte () {
