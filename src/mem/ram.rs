@@ -27,7 +27,6 @@ impl<A: Address> Ram<A> {
     }
 
     /// Returns the capacity of the RAM
-    #[allow(dead_code)]
     pub fn capacity (&self) -> usize {
         self.data.len()
     }

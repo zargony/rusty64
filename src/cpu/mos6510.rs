@@ -20,13 +20,11 @@ impl<M: Addressable<u16>> Mos6510<M> {
     }
 
     /// Interrupt the CPU (NMI)
-    #[allow(dead_code)]
     pub fn nmi (&mut self) {
         self.cpu.nmi();
     }
 
     /// Interrupt the CPU (IRQ)
-    #[allow(dead_code)]
     pub fn irq (&mut self) {
         self.cpu.irq();
     }

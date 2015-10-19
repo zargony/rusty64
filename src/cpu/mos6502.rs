@@ -712,14 +712,12 @@ impl<M: Addressable<u16>> Mos6502<M> {
     }
 
     /// Interrupt the CPU (NMI)
-    #[allow(dead_code)]
     pub fn nmi (&mut self) {
         // Trigger the NMI line. The actual NMI processing is done in the next step().
         self.nmi = true;
     }
 
     /// Interrupt the CPU (IRQ)
-    #[allow(dead_code)]
     pub fn irq (&mut self) {
         // Trigger the IRQ line. The actual IRQ processing is done in the next step().
         self.irq = true;

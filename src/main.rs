@@ -9,6 +9,7 @@
 // Even more PLA details: http://skoe.de/docs/c64-dissected/pla/c64_pla_dissected_r1.1_a4ss.pdf
 
 #![warn(missing_docs, bad_style, unused)]
+#![allow(dead_code)]
 
 #[macro_use]
 extern crate log;

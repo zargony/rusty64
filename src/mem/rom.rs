@@ -35,7 +35,6 @@ impl<A: Address> Rom<A> {
     }
 
     /// Returns the capacity of the ROM
-    #[allow(dead_code)]
     pub fn capacity (&self) -> usize {
         self.data.len()
     }
