@@ -1,6 +1,8 @@
-# About
+# Rusty64 - Emulator platform for 8-bit computers
 
-This is an attempt to create an emulator platform for 8-bit computers in [Rust](http://www.rust-lang.org). It aims to emulate a [C-64](http://en.wikipedia.org/wiki/Commodore_64) initially and maybe other computers some day.
+[![Build Status](https://travis-ci.org/zargony/rusty64.svg?branch=master)](https://travis-ci.org/zargony/rusty64)
+
+Rusty64 is an attempt to create an emulator platform for 8-bit computers in [Rust](http://www.rust-lang.org). It aims to emulate a [C-64](http://en.wikipedia.org/wiki/Commodore_64) initially and maybe other computers some day.
 
 The emulator consists of independent modules that emulate hardware pieces like generic RAM or a 6502 CPU. It's an interpreting emulation (no code translation at run time) and aims to be cycle-accurate. Hardware emulating modules are connected together, loaded with firmware and become an emulator for e.g. the C-64.
 
