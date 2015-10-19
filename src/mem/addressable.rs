@@ -108,7 +108,7 @@ impl<'a, A: Address, M: Addressable<A>> fmt::Display for HexDump<'a, A, M> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::test::TestMemory;
+    use mem::test::TestMemory;
     use super::*;
 
     #[test]

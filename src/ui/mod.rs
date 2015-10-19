@@ -42,8 +42,8 @@ impl Drop for UI {
 
 
 #[cfg(test)]
-mod test {
-    use super::UI;
+mod tests {
+    use super::*;
 
     #[test]
     fn smoke () {

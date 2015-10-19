@@ -2,7 +2,7 @@
 //! Memory types for testing
 //!
 
-use super::Addressable;
+use mem::Addressable;
 
 /// Test-memory that returns/expects the lower nibble of the address as data. Reading the memory
 /// always returns a data byte that equals the lower nibble of the requested address. Writing
@@ -28,7 +28,7 @@ impl Addressable<u16> for TestMemory {
 
 #[cfg(test)]
 mod tests {
-    use super::super::Addressable;
+    use mem::Addressable;
     use super::*;
 
     #[test]

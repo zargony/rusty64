@@ -3,7 +3,7 @@
 //!
 
 use std::slice;
-use super::sdl2::{pixels, render, video};
+use ui::sdl2::{pixels, render, video};
 
 /// A screen is a graphics window presented to the user
 pub struct Screen {

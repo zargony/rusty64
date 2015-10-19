@@ -7,7 +7,7 @@ use std::io::Read;
 use std::fs::File;
 use std::path::Path;
 use addr::Address;
-use super::Addressable;
+use mem::Addressable;
 
 /// Generic read-only memory (ROM)
 pub struct Rom<A> {
@@ -56,7 +56,7 @@ impl<A: Address> Addressable<A> for Rom<A> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::Addressable;
+    use mem::Addressable;
     use super::*;
 
     #[test]

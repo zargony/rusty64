@@ -17,7 +17,7 @@ use std::fmt;
 use std::mem::size_of;
 use std::num::Int;
 use mem::{Address, Addressable};
-use super::CPU;
+use cpu::CPU;
 use self::Instruction::*;
 use self::Operand::*;
 use self::StatusFlag::*;
@@ -806,14 +806,14 @@ impl<M: Addressable<u16>> CPU for Mos6502<M> {
 
 
 #[cfg(test)]
-mod test {
+mod tests {
     use mem::{Address, Addressable, Ram, Rom};
     use mem::test::TestMemory;
-    use super::super::CPU;
+    use cpu::CPU;
     use super::Instruction::LDA;
     use super::Operand::*;
     use super::StatusFlag::*;
-    use super::Mos6502;
+    use super::*;
 
 
     /// Test-memory that returns/expects the sum of the lower and higher nibble of the address as data

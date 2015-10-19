@@ -5,7 +5,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use addr::Address;
-use super::Addressable;
+use mem::Addressable;
 
 impl<A: Address, M: Addressable<A>> Addressable<A> for RefCell<M> {
     fn get (&self, addr: A) -> u8 { self.borrow().get(addr) }
@@ -22,7 +22,7 @@ impl<A: Address, M: Addressable<A>> Addressable<A> for Rc<RefCell<M>> {
 mod tests {
     use std::cell::RefCell;
     use std::rc::Rc;
-    use super::super::{Addressable, Ram};
+    use mem::{Addressable, Ram};
 
     #[test]
     fn read_write () {

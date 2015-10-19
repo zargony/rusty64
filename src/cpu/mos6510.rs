@@ -3,7 +3,7 @@
 //!
 
 use mem::Addressable;
-use super::{CPU, Mos6502};
+use cpu::{CPU, Mos6502};
 
 /// The MOS65010 processor
 pub struct Mos6510<M> {
@@ -45,11 +45,11 @@ impl<M: Addressable<u16>> CPU for Mos6510<M> {
 
 
 #[cfg(test)]
-mod test {
+mod tests {
     use mem::Addressable;
     use mem::test::TestMemory;
-    use super::super::CPU;
-    use super::Mos6510;
+    use cpu::CPU;
+    use super::*;
 
     #[test]
     fn smoke () {
