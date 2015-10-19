@@ -40,6 +40,16 @@ pub trait Address: Copy + Ord + Eq + Not<Output=Self> + BitAnd<Output=Self> + Bi
     fn display (&self) -> Display<Self> {
         Display { addr: self }
     }
+
+    /// Return the address for a host system integer. This should normally not be used and only
+    /// exists to provide a way for memory implementations to easily map from system integer
+    /// indeces. This method is therefore marked as unsafe to prevent usage in normal contexts.
+    unsafe fn from_usize (i: usize) -> Self;
+
+    /// Return the address as a host system integer. This should normally not be used and only
+    /// exists to provide a way for memory implementations to easily map to system integer
+    /// indeces. This method is therefore marked as unsafe to prevent usage in normal contexts.
+    unsafe fn to_usize (self) -> usize;
 }
 
 macro_rules! impl_address {
@@ -58,6 +68,10 @@ macro_rules! impl_address {
                     self.wrapping_add(offset as $addr_type)
                 }
             }
+
+            unsafe fn from_usize (i: usize) -> $addr_type { i as $addr_type }
+
+            unsafe fn to_usize (self) -> usize { self as usize }
         }
     );
 }
@@ -177,5 +191,11 @@ mod tests {
     fn displaying () {
         assert_eq!(format!("{}", 0x0f_u8.display()), "$0F");
         assert_eq!(format!("{}", 0x01ff_u16.display()), "$01FF");
+    }
+
+    #[test]
+    fn usize_conversion () {
+        assert_eq!(0x1234_usize, unsafe { 0x1234_u16.to_usize() });
+        assert_eq!(0x1234_u16,   unsafe { Address::from_usize(0x1234) });
     }
 }
