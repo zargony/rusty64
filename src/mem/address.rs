@@ -31,6 +31,11 @@ pub trait Address: Copy + Ord + Eq + Not<Output=Self> + BitAnd<Output=Self> + Bi
         Iter { addr: self }
     }
 
+    /// Return an iterator for getting successive addresses until the given last address
+    fn upto (self, last_addr: Self) -> UpTo<Self> {
+        UpTo { it: self.successive(), last_addr: last_addr, flag: false }
+    }
+
     /// Return an object for displaying the address
     fn display (&self) -> Display<Self> {
         Display { addr: self }
@@ -73,6 +78,28 @@ impl<A: Address> Iterator for Iter<A> {
         let addr = self.addr;
         self.addr = self.addr.next();
         Some(addr)
+    }
+}
+
+/// Iterator for getting successive addresses until a given last address
+pub struct UpTo<A> {
+    it: Iter<A>,
+    last_addr: A,
+    flag: bool,
+}
+
+impl<A: Address> Iterator for UpTo<A> {
+    type Item = A;
+
+    fn next (&mut self) -> Option<A> {
+        if self.flag {
+            None
+        } else {
+            self.it.next().and_then(|x| {
+                if x == self.last_addr { self.flag = true; }
+                Some(x)
+            })
+        }
     }
 }
 
@@ -135,6 +162,15 @@ mod tests {
         assert_eq!(it.next(), Some(0xffff));
         assert_eq!(it.next(), Some(0x0000));
         assert_eq!(it.next(), Some(0x0001));
+    }
+
+    #[test]
+    fn bounded_iterating () {
+        let mut it = 0xfffe_u16.upto(0xffff);
+        assert_eq!(it.next(), Some(0xfffe));
+        assert_eq!(it.next(), Some(0xffff));
+        assert_eq!(it.next(), None);
+        assert_eq!(it.next(), None);
     }
 
     #[test]
