@@ -2,7 +2,6 @@
 //! Random Access Memory (RAM)
 //!
 
-use num;
 use rand;
 use super::{Address, Addressable};
 
@@ -16,13 +15,13 @@ impl<A: Address> Ram<A> {
     /// Create new RAM with full capacity of its address range. The whole address space is filled
     /// with random bytes initially.
     pub fn new () -> Ram<A> {
-        Ram::with_capacity(A::max_value())
+        Ram::with_capacity(!A::zero())
     }
 
     /// Create new RAM which will be addressable from 0 to the given address. The whole address
     /// space is filled with random bytes initially.
     pub fn with_capacity (last_addr: A) -> Ram<A> {
-        let data = num::range_inclusive(A::zero(), last_addr).map(|_| rand::random()).collect();
+        let data = A::zero().upto(last_addr).map(|_| rand::random()).collect();
         Ram { data: data, last_addr: last_addr }
     }
 
@@ -38,16 +37,14 @@ impl<A: Address> Addressable<A> for Ram<A> {
         if addr > self.last_addr {
             panic!("ram: Read beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
         }
-        let i: usize = num::cast(addr).unwrap();
-        self.data[i]
+        unsafe { self.data[addr.to_usize()] }
     }
 
     fn set (&mut self, addr: A, data: u8) {
         if addr > self.last_addr {
             panic!("ram: Write beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
         }
-        let i: usize = num::cast(addr).unwrap();
-        self.data[i] = data;
+        unsafe { self.data[addr.to_usize()] = data; }
     }
 }
 

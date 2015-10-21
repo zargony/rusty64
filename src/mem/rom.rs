@@ -6,7 +6,6 @@ use std::env;
 use std::io::Read;
 use std::fs::File;
 use std::path::Path;
-use num;
 use super::{Address, Addressable};
 
 /// Generic read-only memory (ROM)
@@ -30,7 +29,7 @@ impl<A: Address> Rom<A> {
             Ok(0) => panic!("rom: Unable to load empty ROM"),
             Ok(len) => len,
         };
-        let last_addr: A = num::cast(len - 1).unwrap();
+        let last_addr: A = unsafe { Address::from_usize(len - 1) };
         Rom { data: data, last_addr: last_addr }
     }
 
@@ -46,8 +45,7 @@ impl<A: Address> Addressable<A> for Rom<A> {
         if addr > self.last_addr {
             panic!("rom: Read beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
         }
-        let i: usize = num::cast(addr).unwrap();
-        self.data[i]
+        unsafe { self.data[addr.to_usize()] }
     }
 
     fn set (&mut self, addr: A, _data: u8) {
