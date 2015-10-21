@@ -26,9 +26,9 @@ pub trait Address: Copy + Ord + Eq + Not<Output=Self> + BitAnd<Output=Self> + Bi
         (*self & mask) | (self.offset(offset) & !mask)
     }
 
-    /// Return an iterator for getting successive addresses
+    /// Return an iterator for getting successive addresses (wrapping)
     fn successive (self) -> Iter<Self> {
-        Iter { addr: self, done: false }
+        Iter { addr: self }
     }
 
     /// Return an object for displaying the address
@@ -64,21 +64,15 @@ impl_address!(u32, i32);
 /// Iterator for getting successive addresses
 pub struct Iter<A> {
     addr: A,
-    done: bool,
 }
 
 impl<A: Address> Iterator for Iter<A> {
     type Item = A;
 
     fn next (&mut self) -> Option<A> {
-        if self.done {
-            None
-        } else {
-            let addr = self.addr;
-            self.addr = self.addr.next();
-            self.done = self.addr == A::zero();
-            Some(addr)
-        }
+        let addr = self.addr;
+        self.addr = self.addr.next();
+        Some(addr)
     }
 }
 
@@ -136,11 +130,11 @@ mod tests {
 
     #[test]
     fn iterating () {
-        let mut it = 0xfffd_u16.successive();
-        assert_eq!(it.next(), Some(0xfffd));
+        let mut it = 0xfffe_u16.successive();
         assert_eq!(it.next(), Some(0xfffe));
         assert_eq!(it.next(), Some(0xffff));
-        assert_eq!(it.next(), None);
+        assert_eq!(it.next(), Some(0x0000));
+        assert_eq!(it.next(), Some(0x0001));
     }
 
     #[test]
