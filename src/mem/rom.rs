@@ -6,7 +6,8 @@ use std::env;
 use std::io::Read;
 use std::fs::File;
 use std::path::Path;
-use super::{Address, Addressable};
+use addr::Address;
+use super::Addressable;
 
 /// Generic read-only memory (ROM)
 pub struct Rom<A> {

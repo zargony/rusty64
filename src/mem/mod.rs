@@ -1,13 +1,11 @@
 //!
-//! Address/memory handling
+//! Generic addressing (memory)
 //!
 
-pub use self::address::Address;
 pub use self::addressable::Addressable;
 pub use self::ram::Ram;
 pub use self::rom::Rom;
 
-mod address;
 mod addressable;
 mod ram;
 mod rom;

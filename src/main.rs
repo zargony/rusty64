@@ -16,6 +16,7 @@ extern crate env_logger;
 extern crate num;
 extern crate rand;
 
+mod addr;
 mod mem;
 
 #[cfg(not(test))]

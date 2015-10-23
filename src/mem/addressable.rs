@@ -4,7 +4,7 @@
 
 use std::{fmt, mem};
 use num::PrimInt;
-use super::Address;
+use addr::Address;
 
 /// A trait for anything that has an address bus and can get/set data. The data size that can be
 /// get/set is u8 always, the address size is given as a type parameter and can be of any size

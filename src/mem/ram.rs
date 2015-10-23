@@ -3,7 +3,8 @@
 //!
 
 use rand;
-use super::{Address, Addressable};
+use addr::Address;
+use super::Addressable;
 
 /// Generic read/write memory (RAM)
 pub struct Ram<A> {

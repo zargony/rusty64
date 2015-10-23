@@ -4,7 +4,8 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
-use super::{Address, Addressable};
+use addr::Address;
+use super::Addressable;
 
 impl<A: Address, M: Addressable<A>> Addressable<A> for RefCell<M> {
     fn get (&self, addr: A) -> u8 { self.borrow().get(addr) }
