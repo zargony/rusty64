@@ -28,6 +28,7 @@ impl Rom {
         let len = match f.read_to_end(&mut data) {
             Err(err) => panic!("rom: Unable to load ROM: {}", err),
             Ok(0) => panic!("rom: Unable to load empty ROM"),
+            Ok(len) if len > 65536 => panic!("rom: Unable to load ROM larger 64k"),
             Ok(len) => len,
         };
         Rom { data: data, last_addr: (len - 1) as u16 }
