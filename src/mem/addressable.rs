@@ -98,7 +98,7 @@ pub struct HexDump<'a, A, M: 'a + ?Sized> {
 
 impl<'a, A: Address, M: Addressable<A>> fmt::Display for HexDump<'a, A, M> {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for addr in self.addr1.upto(self.addr2) {
+        for addr in self.addr1.successive().upto(self.addr2) {
             try!(write!(f, "{:02X} ", self.mem.get(addr)));
         }
         Ok(())

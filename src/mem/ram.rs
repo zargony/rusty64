@@ -22,7 +22,7 @@ impl<A: Address> Ram<A> {
     /// Create new RAM which will be addressable from 0 to the given address. The whole address
     /// space is filled with random bytes initially.
     pub fn with_capacity (last_addr: A) -> Ram<A> {
-        let data = A::zero().upto(last_addr).map(|_| rand::random()).collect();
+        let data = A::zero().successive().upto(last_addr).map(|_| rand::random()).collect();
         Ram { data: data, last_addr: last_addr }
     }
 
