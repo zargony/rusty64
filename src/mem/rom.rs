@@ -44,7 +44,7 @@ impl Addressable for Rom {
         if addr.to_u16() > self.last_addr {
             panic!("rom: Read beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
         }
-        unsafe { self.data[addr.to_usize()] }
+        self.data[addr.to_u16() as usize]
     }
 
     fn set<A: Address> (&mut self, addr: A, _data: u8) {

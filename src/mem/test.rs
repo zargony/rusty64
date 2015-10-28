@@ -17,7 +17,7 @@ impl TestMemory {
 
     /// Calculate the data byte for a given address
     fn addr2data<A: Address> (addr: A) -> u8 {
-        unsafe { addr.to_usize() as u8 }
+        addr.to_u16() as u8
     }
 }
 

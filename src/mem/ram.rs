@@ -37,14 +37,14 @@ impl Addressable for Ram {
         if addr.to_u16() > self.last_addr {
             panic!("ram: Read beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
         }
-        unsafe { self.data[addr.to_usize()] }
+        self.data[addr.to_u16() as usize]
     }
 
     fn set<A: Address> (&mut self, addr: A, data: u8) {
         if addr.to_u16() > self.last_addr {
             panic!("ram: Write beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
         }
-        unsafe { self.data[addr.to_usize()] = data; }
+        self.data[addr.to_u16() as usize] = data;
     }
 }
 
