@@ -23,7 +23,13 @@ pub trait Address: Copy + Ord + Eq + Not<Output=Self> + BitAnd<Output=Self> + Bi
     /// Calculate new address with given offset (wrapping) while protecting the masked part of
     /// the address
     fn offset_masked (&self, offset: i16, mask: Self) -> Self {
-        (*self & mask) | (self.offset(offset) & !mask)
+        self.mask(mask, |addr| addr.offset(offset))
+    }
+
+    /// Replace the address with the return value of a closure, but protect the masked parts of
+    /// the address
+    fn mask<F: FnOnce(Self) -> Self> (self, mask: Self, f: F) -> Self {
+        (self & mask) | (f(self) & !mask)
     }
 
     /// Return an iterator for getting successive addresses (wrapping)
@@ -147,6 +153,13 @@ mod tests {
         assert_eq!(0x12ff.offset_masked( 1, 0xff00), 0x1200);
         assert_eq!(0x1300.offset_masked(-1, 0x0000), 0x12ff);
         assert_eq!(0x1300.offset_masked(-1, 0xff00), 0x13ff);
+    }
+
+    #[test]
+    fn masking () {
+        assert_eq!(0x12ff_u16.mask(0x0000, |a| a.next()), 0x1300);
+        assert_eq!(0x12ff_u16.mask(0xff00, |a| a.next()), 0x1200);
+        assert_eq!(0x12ff_u16.mask(0xfff0, |a| a.next()), 0x12f0);
     }
 
     #[test]
