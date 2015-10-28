@@ -14,7 +14,7 @@ pub trait Addressable {
 
     /// Get a number in host platform byte order format from the given address. Note: Don't use
     /// this directly, better use `get_be` or `get_le` instead.
-    fn get_number<A: Address, T: PrimInt> (&self, addr: A, mask: A) -> T {
+    fn get_number<A: Address, T: PrimInt> (&self, addr: A) -> T {
         let mut val: T = T::zero();
         let ptr = &mut val as *mut T as *mut u8;
         for (i, addr) in addr.successive().take(mem::size_of::<T>()).enumerate() {
@@ -25,22 +25,12 @@ pub trait Addressable {
 
     /// Get a number in big endian format from the given address
     fn get_be<A: Address, T: PrimInt> (&self, addr: A) -> T {
-        T::from_be(self.get_number(addr, A::zero()))
-    }
-
-    /// Get a number in big endian format from the given masked address
-    fn get_be_masked<A: Address, T: PrimInt> (&self, addr: A, mask: A) -> T {
-        T::from_be(self.get_number(addr, mask))
+        T::from_be(self.get_number(addr))
     }
 
     /// Get a number in little endian format from the given address
     fn get_le<A: Address, T: PrimInt> (&self, addr: A) -> T {
-        T::from_le(self.get_number(addr, A::zero()))
-    }
-
-    /// Get a number in little endian format from the given masked address
-    fn get_le_masked<A: Address, T: PrimInt> (&self, addr: A, mask: A) -> T {
-        T::from_le(self.get_number(addr, mask))
+        T::from_le(self.get_number(addr))
     }
 
     /// Memory write: set the data at the given address
@@ -48,7 +38,7 @@ pub trait Addressable {
 
     /// Store a number in host platform byte order format to the given address. Note: Don't use
     /// this directly, better use `set_be` or `set_le` instead.
-    fn set_number<A: Address, T: PrimInt> (&mut self, addr: A, mask: A, val: T) {
+    fn set_number<A: Address, T: PrimInt> (&mut self, addr: A, val: T) {
         let ptr = &val as *const T as *const u8;
         for (i, addr) in addr.successive().take(mem::size_of::<T>()).enumerate() {
             unsafe { self.set(addr, *ptr.offset(i as isize)); }
@@ -57,22 +47,12 @@ pub trait Addressable {
 
     /// Store a number in big endian format to the given address
     fn set_be<A: Address, T: PrimInt> (&mut self, addr: A, val: T) {
-        self.set_number(addr, A::zero(), T::to_be(val));
-    }
-
-    /// Store a number in big endian format to the given masked address
-    fn set_be_masked<A: Address, T: PrimInt> (&mut self, addr: A, mask: A, val: T) {
-        self.set_number(addr, mask, T::to_be(val));
+        self.set_number(addr, T::to_be(val));
     }
 
     /// Store a number in little endian format to the given address
     fn set_le<A: Address, T: PrimInt> (&mut self, addr: A, val: T) {
-        self.set_number(addr, A::zero(), T::to_le(val));
-    }
-
-    /// Store a number in little endian format to the given masked address
-    fn set_le_masked<A: Address, T: PrimInt> (&mut self, addr: A, mask: A, val: T) {
-        self.set_number(addr, mask, T::to_le(val));
+        self.set_number(addr, T::to_le(val));
     }
 
     /// Copy data from another addressable source
@@ -107,6 +87,7 @@ impl<'a, A: Address, M: Addressable> fmt::Display for HexDump<'a, A, M> {
 
 #[cfg(test)]
 mod tests {
+    use addr::Masked;
     use mem::test::TestMemory;
     use super::*;
 
@@ -142,8 +123,8 @@ mod tests {
     #[test]
     fn get_masked_big_endian_number () {
         let data = TestMemory;
-        assert_eq!(    0xff00_u16, data.get_be_masked(0x12ff, 0xff00));
-        assert_eq!(0xfeff0001_u32, data.get_be_masked(0x12fe, 0xff00));
+        assert_eq!(    0xff00_u16, data.get_be(Masked(0x12ff, 0xff00)));
+        assert_eq!(0xfeff0001_u32, data.get_be(Masked(0x12fe, 0xff00)));
     }
 
     #[test]
@@ -171,8 +152,8 @@ mod tests {
     #[test]
     fn get_masked_little_endian_number () {
         let data = TestMemory;
-        assert_eq!(    0x00ff_u16, data.get_le_masked(0x12ff, 0xff00));
-        assert_eq!(0x0100fffe_u32, data.get_le_masked(0x12fe, 0xff00));
+        assert_eq!(    0x00ff_u16, data.get_le(Masked(0x12ff, 0xff00)));
+        assert_eq!(0x0100fffe_u32, data.get_le(Masked(0x12fe, 0xff00)));
     }
 
     #[test]
@@ -207,8 +188,8 @@ mod tests {
     #[test]
     fn set_masked_big_endian_number () {
         let mut data = TestMemory;
-        data.set_be_masked(0x12ff, 0xff00,     0xff00_u16);
-        data.set_be_masked(0x12fe, 0xff00, 0xfeff0001_u32);
+        data.set_be(Masked(0x12ff, 0xff00),     0xff00_u16);
+        data.set_be(Masked(0x12fe, 0xff00), 0xfeff0001_u32);
     }
 
     #[test]
@@ -236,8 +217,8 @@ mod tests {
     #[test]
     fn set_masked_little_endian_number () {
         let mut data = TestMemory;
-        data.set_le_masked(0x12ff, 0xff00,     0x00ff_u16);
-        data.set_le_masked(0x12fe, 0xff00, 0x0100fffe_u32);
+        data.set_le(Masked(0x12ff, 0xff00),     0x00ff_u16);
+        data.set_le(Masked(0x12fe, 0xff00), 0x0100fffe_u32);
     }
 
     #[test]
