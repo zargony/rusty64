@@ -2,6 +2,7 @@
 //! Memory types for testing
 //!
 
+use addr::Address;
 use mem::Addressable;
 
 /// Test-memory that returns/expects the lower nibble of the address as data. Reading the memory
@@ -13,15 +14,20 @@ impl TestMemory {
     pub fn new () -> TestMemory {
         TestMemory
     }
+
+    /// Calculate the data byte for a given address
+    fn addr2data<A: Address> (addr: A) -> u8 {
+        unsafe { addr.to_usize() as u8 }
+    }
 }
 
-impl Addressable<u16> for TestMemory {
-    fn get (&self, addr: u16) -> u8 {
-        addr as u8
+impl Addressable for TestMemory {
+    fn get<A: Address> (&self, addr: A) -> u8 {
+        TestMemory::addr2data(addr)
     }
 
-    fn set (&mut self, addr: u16, data: u8) {
-        assert_eq!(data, addr as u8);
+    fn set<A: Address> (&mut self, addr: A, data: u8) {
+        assert_eq!(data, TestMemory::addr2data(addr));
     }
 }
 

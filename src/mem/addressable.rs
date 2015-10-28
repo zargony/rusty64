@@ -6,16 +6,15 @@ use std::{fmt, mem};
 use num::PrimInt;
 use addr::Address;
 
-/// A trait for anything that has an address bus and can get/set data. The data size that can be
-/// get/set is u8 always, the address size is given as a type parameter and can be of any size
-/// (typically u16 or u32).
-pub trait Addressable<A: Address> {
+/// A trait for anything that has an address bus and can get/set data. The address (any type that
+/// implements the `Address` trait) is 16 bit always. The data that can be get/set is 8 bit.
+pub trait Addressable {
     /// Memory read: returns the data at the given address
-    fn get (&self, addr: A) -> u8;
+    fn get<A: Address> (&self, addr: A) -> u8;
 
     /// Get a number in host platform byte order format from the given address. Note: Don't use
     /// this directly, better use `get_be` or `get_le` instead.
-    fn get_number<T: PrimInt> (&self, addr: A, mask: A) -> T {
+    fn get_number<A: Address, T: PrimInt> (&self, addr: A, mask: A) -> T {
         let mut val: T = T::zero();
         let ptr = &mut val as *mut T as *mut u8;
         for (i, addr) in addr.successive().take(mem::size_of::<T>()).enumerate() {
@@ -25,31 +24,31 @@ pub trait Addressable<A: Address> {
     }
 
     /// Get a number in big endian format from the given address
-    fn get_be<T: PrimInt> (&self, addr: A) -> T {
+    fn get_be<A: Address, T: PrimInt> (&self, addr: A) -> T {
         T::from_be(self.get_number(addr, A::zero()))
     }
 
     /// Get a number in big endian format from the given masked address
-    fn get_be_masked<T: PrimInt> (&self, addr: A, mask: A) -> T {
+    fn get_be_masked<A: Address, T: PrimInt> (&self, addr: A, mask: A) -> T {
         T::from_be(self.get_number(addr, mask))
     }
 
     /// Get a number in little endian format from the given address
-    fn get_le<T: PrimInt> (&self, addr: A) -> T {
+    fn get_le<A: Address, T: PrimInt> (&self, addr: A) -> T {
         T::from_le(self.get_number(addr, A::zero()))
     }
 
     /// Get a number in little endian format from the given masked address
-    fn get_le_masked<T: PrimInt> (&self, addr: A, mask: A) -> T {
+    fn get_le_masked<A: Address, T: PrimInt> (&self, addr: A, mask: A) -> T {
         T::from_le(self.get_number(addr, mask))
     }
 
     /// Memory write: set the data at the given address
-    fn set (&mut self, addr: A, data: u8);
+    fn set<A: Address> (&mut self, addr: A, data: u8);
 
     /// Store a number in host platform byte order format to the given address. Note: Don't use
     /// this directly, better use `set_be` or `set_le` instead.
-    fn set_number<T: PrimInt> (&mut self, addr: A, mask: A, val: T) {
+    fn set_number<A: Address, T: PrimInt> (&mut self, addr: A, mask: A, val: T) {
         let ptr = &val as *const T as *const u8;
         for (i, addr) in addr.successive().take(mem::size_of::<T>()).enumerate() {
             unsafe { self.set(addr, *ptr.offset(i as isize)); }
@@ -57,34 +56,34 @@ pub trait Addressable<A: Address> {
     }
 
     /// Store a number in big endian format to the given address
-    fn set_be<T: PrimInt> (&mut self, addr: A, val: T) {
+    fn set_be<A: Address, T: PrimInt> (&mut self, addr: A, val: T) {
         self.set_number(addr, A::zero(), T::to_be(val));
     }
 
     /// Store a number in big endian format to the given masked address
-    fn set_be_masked<T: PrimInt> (&mut self, addr: A, mask: A, val: T) {
+    fn set_be_masked<A: Address, T: PrimInt> (&mut self, addr: A, mask: A, val: T) {
         self.set_number(addr, mask, T::to_be(val));
     }
 
     /// Store a number in little endian format to the given address
-    fn set_le<T: PrimInt> (&mut self, addr: A, val: T) {
+    fn set_le<A: Address, T: PrimInt> (&mut self, addr: A, val: T) {
         self.set_number(addr, A::zero(), T::to_le(val));
     }
 
     /// Store a number in little endian format to the given masked address
-    fn set_le_masked<T: PrimInt> (&mut self, addr: A, mask: A, val: T) {
+    fn set_le_masked<A: Address, T: PrimInt> (&mut self, addr: A, mask: A, val: T) {
         self.set_number(addr, mask, T::to_le(val));
     }
 
     /// Copy data from another addressable source
-    fn copy<M: Addressable<A>> (&mut self, self_addr: A, other: &M, other_addr: A, size: usize) {
+    fn copy<A1: Address, A2: Address, M: Addressable> (&mut self, self_addr: A1, other: &M, other_addr: A2, size: usize) {
         for (dst_addr, src_addr) in self_addr.successive().zip(other_addr.successive()).take(size) {
             self.set(dst_addr, other.get(src_addr));
         }
     }
 
     /// Return an object for displaying a hexdump of the given address range
-    fn hexdump (&self, addr1: A, addr2: A) -> HexDump<A, Self> {
+    fn hexdump<A: Address> (&self, addr1: A, addr2: A) -> HexDump<A, Self> {
         HexDump { mem: self, addr1: addr1, addr2: addr2 }
     }
 }
@@ -96,7 +95,7 @@ pub struct HexDump<'a, A, M: 'a + ?Sized> {
     addr2: A,
 }
 
-impl<'a, A: Address, M: Addressable<A>> fmt::Display for HexDump<'a, A, M> {
+impl<'a, A: Address, M: Addressable> fmt::Display for HexDump<'a, A, M> {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
         for addr in self.addr1.successive().upto(self.addr2) {
             try!(write!(f, "{:02X} ", self.mem.get(addr)));

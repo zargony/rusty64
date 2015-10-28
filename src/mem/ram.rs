@@ -7,22 +7,22 @@ use addr::Address;
 use mem::Addressable;
 
 /// Generic read/write memory (RAM)
-pub struct Ram<A> {
+pub struct Ram {
     data: Vec<u8>,
-    last_addr: A,
+    last_addr: u16,
 }
 
-impl<A: Address> Ram<A> {
+impl Ram {
     /// Create new RAM with full capacity of its address range. The whole address space is filled
     /// with random bytes initially.
-    pub fn new () -> Ram<A> {
-        Ram::with_capacity(!A::zero())
+    pub fn new () -> Ram {
+        Ram::with_capacity(!0)
     }
 
     /// Create new RAM which will be addressable from 0 to the given address. The whole address
     /// space is filled with random bytes initially.
-    pub fn with_capacity (last_addr: A) -> Ram<A> {
-        let data = A::zero().successive().upto(last_addr).map(|_| rand::random()).collect();
+    pub fn with_capacity (last_addr: u16) -> Ram {
+        let data = 0.successive().upto(last_addr).map(|_| rand::random()).collect();
         Ram { data: data, last_addr: last_addr }
     }
 
@@ -32,16 +32,16 @@ impl<A: Address> Ram<A> {
     }
 }
 
-impl<A: Address> Addressable<A> for Ram<A> {
-    fn get (&self, addr: A) -> u8 {
-        if addr > self.last_addr {
+impl Addressable for Ram {
+    fn get<A: Address> (&self, addr: A) -> u8 {
+        if addr.to_u16() > self.last_addr {
             panic!("ram: Read beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
         }
         unsafe { self.data[addr.to_usize()] }
     }
 
-    fn set (&mut self, addr: A, data: u8) {
-        if addr > self.last_addr {
+    fn set<A: Address> (&mut self, addr: A, data: u8) {
+        if addr.to_u16() > self.last_addr {
             panic!("ram: Write beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
         }
         unsafe { self.data[addr.to_usize()] = data; }
@@ -56,19 +56,19 @@ mod tests {
 
     #[test]
     fn create_with_full_addressable_capacity () {
-        let memory: Ram<u8> = Ram::new();
-        assert_eq!(memory.capacity(), 256);
+        let memory = Ram::new();
+        assert_eq!(memory.capacity(), 65536);
     }
 
     #[test]
     fn create_with_requested_capacity () {
-        let memory: Ram<u16> = Ram::with_capacity(0x03ff);
+        let memory = Ram::with_capacity(0x03ff);
         assert_eq!(memory.capacity(), 1024);
     }
 
     #[test]
     fn read_write () {
-        let mut memory: Ram<u16> = Ram::with_capacity(0x03ff_u16);
+        let mut memory = Ram::with_capacity(0x03ff_u16);
         memory.set(0x0123, 0x55);
         assert_eq!(memory.get(0x0123), 0x55);
     }

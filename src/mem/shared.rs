@@ -7,14 +7,14 @@ use std::rc::Rc;
 use addr::Address;
 use mem::Addressable;
 
-impl<A: Address, M: Addressable<A>> Addressable<A> for RefCell<M> {
-    fn get (&self, addr: A) -> u8 { self.borrow().get(addr) }
-    fn set (&mut self, addr: A, data: u8) { self.borrow_mut().set(addr, data) }
+impl<M: Addressable> Addressable for RefCell<M> {
+    fn get<A: Address> (&self, addr: A) -> u8 { self.borrow().get(addr) }
+    fn set<A: Address> (&mut self, addr: A, data: u8) { self.borrow_mut().set(addr, data) }
 }
 
-impl<A: Address, M: Addressable<A>> Addressable<A> for Rc<RefCell<M>> {
-    fn get (&self, addr: A) -> u8 { (**self).borrow().get(addr) }
-    fn set (&mut self, addr: A, data: u8) { (**self).borrow_mut().set(addr, data) }
+impl<M: Addressable> Addressable for Rc<RefCell<M>> {
+    fn get<A: Address> (&self, addr: A) -> u8 { (**self).borrow().get(addr) }
+    fn set<A: Address> (&mut self, addr: A, data: u8) { (**self).borrow_mut().set(addr, data) }
 }
 
 
@@ -26,7 +26,7 @@ mod tests {
 
     #[test]
     fn read_write () {
-        let mut mem: Rc<RefCell<Ram<u8>>> = Rc::new(RefCell::new(Ram::new()));
+        let mut mem = Rc::new(RefCell::new(Ram::new()));
         mem.set(0x12, 0x34);
         assert_eq!(mem.get(0x12), 0x34);
         mem.set(0x56, 0x78);
@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn read_write_shared () {
-        let mut mem1: Rc<RefCell<Ram<u8>>> = Rc::new(RefCell::new(Ram::new()));
+        let mut mem1 = Rc::new(RefCell::new(Ram::new()));
         mem1.set(0x12, 0x34);
         let mut mem2 = mem1.clone();
         assert_eq!(mem2.get(0x12), 0x34);

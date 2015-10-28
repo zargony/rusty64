@@ -10,14 +10,14 @@ use addr::Address;
 use mem::Addressable;
 
 /// Generic read-only memory (ROM)
-pub struct Rom<A> {
+pub struct Rom {
     data: Vec<u8>,
-    last_addr: A,
+    last_addr: u16,
 }
 
-impl<A: Address> Rom<A> {
+impl Rom {
     /// Create new ROM with contents of the given file
-    pub fn new<P: AsRef<Path>> (path: P) -> Rom<A> {
+    pub fn new<P: AsRef<Path>> (path: P) -> Rom {
         let filename = env::current_dir().unwrap().join("share").join(path);
         info!("rom: Loading ROM from {}", filename.display());
         let mut data = Vec::new();
@@ -30,8 +30,7 @@ impl<A: Address> Rom<A> {
             Ok(0) => panic!("rom: Unable to load empty ROM"),
             Ok(len) => len,
         };
-        let last_addr: A = unsafe { Address::from_usize(len - 1) };
-        Rom { data: data, last_addr: last_addr }
+        Rom { data: data, last_addr: (len - 1) as u16 }
     }
 
     /// Returns the capacity of the ROM
@@ -40,15 +39,15 @@ impl<A: Address> Rom<A> {
     }
 }
 
-impl<A: Address> Addressable<A> for Rom<A> {
-    fn get (&self, addr: A) -> u8 {
-        if addr > self.last_addr {
+impl Addressable for Rom {
+    fn get<A: Address> (&self, addr: A) -> u8 {
+        if addr.to_u16() > self.last_addr {
             panic!("rom: Read beyond memory bounds ({} > {})", addr.display(), self.last_addr.display());
         }
         unsafe { self.data[addr.to_usize()] }
     }
 
-    fn set (&mut self, addr: A, _data: u8) {
+    fn set<A: Address> (&mut self, addr: A, _data: u8) {
         warn!("rom: Ignoring write to read-only memory ({})", addr.display());
     }
 }
@@ -61,19 +60,19 @@ mod tests {
 
     #[test]
     fn create_with_file_contents () {
-        let memory: Rom<u16> = Rom::new("c64/kernal.rom");
+        let memory = Rom::new("c64/kernal.rom");
         assert_eq!(memory.capacity(), 8192);
     }
 
     #[test]
     fn read () {
-        let memory: Rom<u16> = Rom::new("c64/kernal.rom");
+        let memory = Rom::new("c64/kernal.rom");
         assert_eq!(memory.get(0x0123), 0x60);
     }
 
     #[test]
     fn write_does_nothing () {
-        let mut memory: Rom<u16> = Rom::new("c64/kernal.rom");
+        let mut memory = Rom::new("c64/kernal.rom");
         memory.set(0x0123, 0x55);
         assert!(memory.get(0x0123) != 0x55);
     }
