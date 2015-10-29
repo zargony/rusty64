@@ -5,9 +5,10 @@
 use addr::Address;
 use mem::Addressable;
 
-/// Test-memory that returns/expects the lower nibble of the address as data. Reading the memory
-/// always returns a data byte that equals the lower nibble of the requested address. Writing
-/// the memory asserts that the set data byte equals the lower nibble of the requested address.
+/// Test-memory that returns/expects the sum of the lower and higher nibble of the address as data.
+/// Reading the memory always returns a data byte that equals the sum of the lower and higher
+/// nibble of the requested address. Writing the memory asserts that the set data byte equals the
+/// sum of the lower and hight nibble of the requested address.
 pub struct TestMemory;
 
 impl TestMemory {
@@ -17,7 +18,8 @@ impl TestMemory {
 
     /// Calculate the data byte for a given address
     fn addr2data<A: Address> (addr: A) -> u8 {
-        addr.to_u16() as u8
+        let addr = addr.to_u16();
+        (addr as u8).wrapping_add((addr >> 8) as u8)
     }
 }
 
@@ -40,15 +42,15 @@ mod tests {
     #[test]
     fn read () {
         let memory = TestMemory::new();
-        assert_eq!(memory.get(0x0123), 0x23);
-        assert_eq!(memory.get(0x1234), 0x34);
+        assert_eq!(memory.get(0x0123), 0x24);
+        assert_eq!(memory.get(0x1234), 0x46);
     }
 
     #[test]
     fn write () {
         let mut memory = TestMemory::new();
-        memory.set(0x0123, 0x23);
-        memory.set(0x1234, 0x34);
+        memory.set(0x0123, 0x24);
+        memory.set(0x1234, 0x46);
     }
 
     #[test] #[should_panic]

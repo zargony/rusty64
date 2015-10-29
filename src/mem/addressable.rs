@@ -95,7 +95,7 @@ mod tests {
     fn get_byte () {
         let data = TestMemory;
         assert_eq!(data.get(0x0012), 0x12);
-        assert_eq!(data.get(0x1234), 0x34);
+        assert_eq!(data.get(0x1234), 0x46);
     }
 
     #[test]
@@ -123,8 +123,8 @@ mod tests {
     #[test]
     fn get_masked_big_endian_number () {
         let data = TestMemory;
-        assert_eq!(    0xff00_u16, data.get_be(Masked(0x12ff, 0xff00)));
-        assert_eq!(0xfeff0001_u32, data.get_be(Masked(0x12fe, 0xff00)));
+        assert_eq!(    0x1112_u16, data.get_be(Masked(0x12ff, 0xff00)));
+        assert_eq!(0x10111213_u32, data.get_be(Masked(0x12fe, 0xff00)));
     }
 
     #[test]
@@ -152,15 +152,15 @@ mod tests {
     #[test]
     fn get_masked_little_endian_number () {
         let data = TestMemory;
-        assert_eq!(    0x00ff_u16, data.get_le(Masked(0x12ff, 0xff00)));
-        assert_eq!(0x0100fffe_u32, data.get_le(Masked(0x12fe, 0xff00)));
+        assert_eq!(    0x1211_u16, data.get_le(Masked(0x12ff, 0xff00)));
+        assert_eq!(0x13121110_u32, data.get_le(Masked(0x12fe, 0xff00)));
     }
 
     #[test]
     fn set_byte () {
         let mut data = TestMemory;
         data.set(0x0012, 0x12);
-        data.set(0x1234, 0x34);
+        data.set(0x1234, 0x46);
     }
 
     #[test]
@@ -188,8 +188,8 @@ mod tests {
     #[test]
     fn set_masked_big_endian_number () {
         let mut data = TestMemory;
-        data.set_be(Masked(0x12ff, 0xff00),     0xff00_u16);
-        data.set_be(Masked(0x12fe, 0xff00), 0xfeff0001_u32);
+        data.set_be(Masked(0x12ff, 0xff00),     0x1112_u16);
+        data.set_be(Masked(0x12fe, 0xff00), 0x10111213_u32);
     }
 
     #[test]
@@ -217,22 +217,22 @@ mod tests {
     #[test]
     fn set_masked_little_endian_number () {
         let mut data = TestMemory;
-        data.set_le(Masked(0x12ff, 0xff00),     0x00ff_u16);
-        data.set_le(Masked(0x12fe, 0xff00), 0x0100fffe_u32);
+        data.set_le(Masked(0x12ff, 0xff00),     0x1211_u16);
+        data.set_le(Masked(0x12fe, 0xff00), 0x13121110_u32);
     }
 
     #[test]
     fn copying_memory () {
         let data1 = TestMemory;
         let mut data2 = TestMemory;
-        data2.copy(0x8000, &data1, 0x0000, 0x1000);
+        data2.copy(0x8000, &data1, 0x0080, 0x0080);
     }
 
     #[test]
     fn dumping_memory () {
         let data = TestMemory;
-        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0100)), "00 ");
-        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0101)), "00 01 ");
-        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0105)), "00 01 02 03 04 05 ");
+        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0100)), "01 ");
+        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0101)), "01 02 ");
+        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0105)), "01 02 03 04 05 06 ");
     }
 }
