@@ -12,47 +12,49 @@ pub trait Addressable {
     /// Memory read: returns the data at the given address
     fn get<A: Address> (&self, addr: A) -> u8;
 
-    /// Get a number in host platform byte order format from the given address. Note: Don't use
-    /// this directly, better use `get_be` or `get_le` instead.
-    fn get_number<A: Address, T: PrimInt> (&self, addr: A) -> T {
-        let mut val: T = T::zero();
+    /// Get a type from the given address by copying data bits. This gets a number in host platform
+    /// byte order format. Since this unsafely transmutes to the target type, this method is
+    /// marked unsafe. For integers, better use `get_be` or `get_le` instead.
+    unsafe fn get_type<A: Address, T: Copy> (&self, addr: A) -> T {
+        let mut val: T = mem::uninitialized();
         let ptr = &mut val as *mut T as *mut u8;
         for (i, addr) in addr.successive().take(mem::size_of::<T>()).enumerate() {
-            unsafe { *ptr.offset(i as isize) = self.get(addr); }
+            *ptr.offset(i as isize) = self.get(addr);
         }
         val
     }
 
     /// Get a number in big endian format from the given address
     fn get_be<A: Address, T: PrimInt> (&self, addr: A) -> T {
-        T::from_be(self.get_number(addr))
+        unsafe { T::from_be(self.get_type(addr)) }
     }
 
     /// Get a number in little endian format from the given address
     fn get_le<A: Address, T: PrimInt> (&self, addr: A) -> T {
-        T::from_le(self.get_number(addr))
+        unsafe { T::from_le(self.get_type(addr)) }
     }
 
     /// Memory write: set the data at the given address
     fn set<A: Address> (&mut self, addr: A, data: u8);
 
-    /// Store a number in host platform byte order format to the given address. Note: Don't use
-    /// this directly, better use `set_be` or `set_le` instead.
-    fn set_number<A: Address, T: PrimInt> (&mut self, addr: A, val: T) {
+    /// Store a type to the given address by copying data bits. This stores a type in host
+    /// platform byte order format. Since this unsafely transmutes the stored type, this method
+    /// is marked unsafe. For integers, better use `set_be` or `set_le` instead.
+    unsafe fn set_type<A: Address, T: Copy> (&mut self, addr: A, val: T) {
         let ptr = &val as *const T as *const u8;
         for (i, addr) in addr.successive().take(mem::size_of::<T>()).enumerate() {
-            unsafe { self.set(addr, *ptr.offset(i as isize)); }
+            self.set(addr, *ptr.offset(i as isize));
         }
     }
 
     /// Store a number in big endian format to the given address
     fn set_be<A: Address, T: PrimInt> (&mut self, addr: A, val: T) {
-        self.set_number(addr, T::to_be(val));
+        unsafe { self.set_type(addr, T::to_be(val)); }
     }
 
     /// Store a number in little endian format to the given address
     fn set_le<A: Address, T: PrimInt> (&mut self, addr: A, val: T) {
-        self.set_number(addr, T::to_le(val));
+        unsafe { self.set_type(addr, T::to_le(val)); }
     }
 
     /// Copy data from another addressable source
