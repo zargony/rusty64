@@ -3,8 +3,31 @@
 //!
 
 use std::{fmt, mem};
-use num::PrimInt;
 use addr::Address;
+
+/// Trait for integers that can be converted from host byte order to a fixed byte order and
+/// vice versa (all Rust built-in integers). This used to be in std::num or in the num crate,
+/// but has become deprecated for some reason. Rust still provides the conversion methods, but
+/// is missing this trait that groups all convertable integer types.
+trait Integer: Copy {
+    fn from_be (x: Self) -> Self;
+    fn from_le (x: Self) -> Self;
+    fn to_be (self) -> Self;
+    fn to_le (self) -> Self;
+}
+
+macro_rules! impl_integer {
+    ($($T:ty)*) => ($(
+        impl Integer for $T {
+            fn from_be (x: $T) -> $T { <$T>::from_be(x) }
+            fn from_le (x: $T) -> $T { <$T>::from_le(x) }
+            fn to_be (self) -> $T { <$T>::to_be(self) }
+            fn to_le (self) -> $T { <$T>::to_le(self) }
+        }
+    )*);
+}
+
+impl_integer!(u8 u16 u32 u64 usize i8 i16 i32 i64 isize);
 
 /// A trait for anything that has an address bus and can get/set data. The address (any type that
 /// implements the `Address` trait) is 16 bit always. The data that can be get/set is 8 bit.
@@ -25,12 +48,12 @@ pub trait Addressable {
     }
 
     /// Get a number in big endian format from the given address
-    fn get_be<A: Address, T: PrimInt> (&self, addr: A) -> T {
+    fn get_be<A: Address, T: Integer> (&self, addr: A) -> T {
         unsafe { T::from_be(self.get_type(addr)) }
     }
 
     /// Get a number in little endian format from the given address
-    fn get_le<A: Address, T: PrimInt> (&self, addr: A) -> T {
+    fn get_le<A: Address, T: Integer> (&self, addr: A) -> T {
         unsafe { T::from_le(self.get_type(addr)) }
     }
 
@@ -48,12 +71,12 @@ pub trait Addressable {
     }
 
     /// Store a number in big endian format to the given address
-    fn set_be<A: Address, T: PrimInt> (&mut self, addr: A, val: T) {
+    fn set_be<A: Address, T: Integer> (&mut self, addr: A, val: T) {
         unsafe { self.set_type(addr, T::to_be(val)); }
     }
 
     /// Store a number in little endian format to the given address
-    fn set_le<A: Address, T: PrimInt> (&mut self, addr: A, val: T) {
+    fn set_le<A: Address, T: Integer> (&mut self, addr: A, val: T) {
         unsafe { self.set_type(addr, T::to_le(val)); }
     }
 
