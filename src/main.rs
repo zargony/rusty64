@@ -15,12 +15,16 @@
 extern crate log;
 extern crate env_logger;
 extern crate rand;
+#[macro_use]
+extern crate bitflags;
 
 mod addr;
+mod cpu;
 mod mem;
 
 #[cfg(not(test))]
-fn main() {
+fn main () {
     env_logger::init().unwrap();
-    info!("Hello, world!");
+
+    let _foo = cpu::Mos6510::new(mem::Ram::new());
 }

@@ -12,7 +12,7 @@ pub struct Mos6510<M> {
     port_dat: u8,                           // CPU port data register
 }
 
-impl<M: Addressable<u16>> Mos6510<M> {
+impl<M: Addressable> Mos6510<M> {
     /// Create a new MOS6510 processor
     pub fn new (mem: M) -> Mos6510<M> {
         // TODO: addresses $0000 (data direction) and $0001 (data) are hardwired for the processor I/O port
@@ -30,7 +30,7 @@ impl<M: Addressable<u16>> Mos6510<M> {
     }
 }
 
-impl<M: Addressable<u16>> CPU for Mos6510<M> {
+impl<M: Addressable> CPU for Mos6510<M> {
     /// Reset the CPU
     fn reset (&mut self) {
         self.cpu.reset();
@@ -46,7 +46,6 @@ impl<M: Addressable<u16>> CPU for Mos6510<M> {
 
 #[cfg(test)]
 mod tests {
-    use mem::Addressable;
     use mem::test::TestMemory;
     use cpu::CPU;
     use super::*;
