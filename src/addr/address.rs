@@ -39,7 +39,7 @@ impl Address for u16 {
 
     fn offset (&self, offset: i16) -> u16 {
         if offset < 0 {
-            self.wrapping_sub((-offset as u16))
+            self.wrapping_sub(-offset as u16)
         } else {
             self.wrapping_add(offset as u16)
         }
