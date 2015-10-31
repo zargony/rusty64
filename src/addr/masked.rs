@@ -128,10 +128,6 @@ impl<A: Maskable + Address> Address for Masked<A> {
         self.0.to_u16()
     }
 
-    fn next (&self) -> Masked<A> {
-        self.map(|addr| addr.next())
-    }
-
     fn offset (&self, offset: i16) -> Masked<A> {
         self.map(|addr| addr.offset(offset))
     }
@@ -171,18 +167,13 @@ mod tests {
     }
 
     #[test]
-    fn address_next () {
-        assert_eq!(Masked(0x12ff, 0x0000).next(), 0x1300);
-        assert_eq!(Masked(0x12ff, 0xff00).next(), 0x1200);
-        assert_eq!(Masked(0x12ff, 0xfff0).next(), 0x12f0);
-    }
-
-    #[test]
     fn address_offset () {
         assert_eq!(Masked(0x12ff, 0x0000).offset(1), 0x1300);
         assert_eq!(Masked(0x12ff, 0xff00).offset(1), 0x1200);
+        assert_eq!(Masked(0x12ff, 0xfff0).offset(1), 0x12f0);
         assert_eq!(Masked(0x1300, 0x0000).offset(-1), 0x12ff);
         assert_eq!(Masked(0x1300, 0xff00).offset(-1), 0x13ff);
+        assert_eq!(Masked(0x1300, 0xfff0).offset(-1), 0x130f);
     }
 
     #[test]

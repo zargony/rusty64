@@ -6,10 +6,14 @@
 /// vice versa (all Rust built-in integers). This used to be in std::num or in the num crate,
 /// but has become deprecated for some reason. Rust still provides the conversion methods, but
 /// is missing this trait that groups all convertable integer types.
-pub trait Integer: Copy {
+pub trait Integer: Copy + PartialOrd + Ord + PartialEq + Eq {
+    /// Convert from big endian number
     fn from_be (x: Self) -> Self;
+    /// Convert from little endian number
     fn from_le (x: Self) -> Self;
+    /// Convert to big endian number
     fn to_be (self) -> Self;
+    /// Convert to little endian number
     fn to_le (self) -> Self;
 }
 

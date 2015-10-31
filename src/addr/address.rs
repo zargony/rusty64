@@ -13,9 +13,6 @@ pub trait Address: Copy + Ord + Eq + fmt::UpperHex {
     /// The address as an unsigned integer
     fn to_u16 (&self) -> u16;
 
-    /// The succeeding address (wrapping)
-    fn next (&self) -> Self;
-
     /// Calculate new address with given offset (wrapping)
     fn offset (&self, offset: i16) -> Self;
 
@@ -34,8 +31,6 @@ impl Address for u16 {
     fn zero () -> u16 { 0 }
 
     fn to_u16 (&self) -> u16 { *self }
-
-    fn next (&self) -> u16 { self.wrapping_add(1) }
 
     fn offset (&self, offset: i16) -> u16 {
         if offset < 0 {
@@ -63,7 +58,7 @@ impl<A: Address> Iterator for Iter<A> {
 
     fn next (&mut self) -> Option<A> {
         let addr = self.addr;
-        self.addr = self.addr.next();
+        self.addr = self.addr.offset(1);
         Some(addr)
     }
 }
@@ -114,12 +109,6 @@ mod tests {
     #[test]
     fn zero () {
         assert_eq!(u16::zero(), 0x0000);
-    }
-
-    #[test]
-    fn next () {
-        assert_eq!(0x1234.next(), 0x1235);
-        assert_eq!(0xffff.next(), 0x0000);
     }
 
     #[test]
