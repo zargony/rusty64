@@ -3,6 +3,7 @@
 //!
 
 use std::{fmt, mem};
+use std::fmt::Write;
 use addr::{Address, Integer};
 
 /// A trait for anything that has an address bus and can get/set data. The address (any type that
@@ -78,10 +79,12 @@ pub struct HexDump<'a, A, M: 'a + ?Sized> {
 
 impl<'a, A: Address, M: Addressable> fmt::Display for HexDump<'a, A, M> {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut str = String::new();
         for addr in self.addr1.successive().upto(self.addr2) {
-            try!(write!(f, "{:02X} ", self.mem.get(addr)));
+            try!(write!(str, "{:02X}", self.mem.get(addr)));
+            if addr != self.addr2 { try!(write!(str, " ")); }
         }
-        Ok(())
+        str.fmt(f)
     }
 }
 
@@ -232,8 +235,10 @@ mod tests {
     #[test]
     fn dumping_memory () {
         let data = TestMemory;
-        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0100)), "01 ");
-        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0101)), "01 02 ");
-        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0105)), "01 02 03 04 05 06 ");
+        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0100)), "01");
+        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0101)), "01 02");
+        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0103)), "01 02 03 04");
+        assert_eq!(format!("{:16}", data.hexdump(0x0100, 0x0103)), "01 02 03 04     ");
+        assert_eq!(format!("{:>16}", data.hexdump(0x0100, 0x0103)), "     01 02 03 04");
     }
 }
