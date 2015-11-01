@@ -361,14 +361,14 @@ impl<M: Addressable> CPU for Mos6502<M> {
                 let new_pc = self.pc;
                 instruction.execute(self, &operand);
                 // FIXME: formatting doesn't work!?
-                trace!("mos6502: {}  {:11}  {:3} {:15}  -[{}]-> AC:{:02X} X:{:02X} Y:{:02X} SR:{:02X} SP:{:02X} NV-BDIZC:{:08b}",
-                    old_pc.display(), self.mem.hexdump(old_pc, new_pc), instruction, operand,
+                trace!("mos6502: {}  {:8}  {:3} {:15}  -[{}]-> AC:{:02X} X:{:02X} Y:{:02X} SR:{:02X} SP:{:02X} NV-BDIZC:{:08b}",
+                    old_pc.display(), self.mem.hexdump(old_pc, new_pc-1), instruction, operand,
                     cycles, self.ac, self.x, self.y, self.sr.bits, self.sp, self.sr.bits);
                 cycles
             },
             // Got illegal opcode
             None => {
-                trace!("mos6502: {}  {:11}  ???", old_pc.display(), self.mem.hexdump(old_pc, old_pc+3));
+                trace!("mos6502: {}  {:8}  ???", old_pc.display(), self.mem.hexdump(old_pc, old_pc+2));
                 panic!("mos6502: Illegal opcode #${:02X} at {}", self.mem.get(old_pc), old_pc.display());
             },
         }
