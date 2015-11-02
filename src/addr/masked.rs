@@ -120,16 +120,12 @@ impl<T: fmt::UpperHex> fmt::UpperHex for Masked<T> {
 }
 
 impl<A: Maskable + Address> Address for Masked<A> {
-    fn zero () -> Masked<A> {
-        Masked(A::zero(), A::zero())
+    fn offset (&self, offset: i16) -> Masked<A> {
+        self.map(|addr| addr.offset(offset))
     }
 
     fn to_u16 (&self) -> u16 {
         self.0.to_u16()
-    }
-
-    fn offset (&self, offset: i16) -> Masked<A> {
-        self.map(|addr| addr.offset(offset))
     }
 }
 

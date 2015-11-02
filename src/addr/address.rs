@@ -6,15 +6,11 @@ use std::{fmt, mem};
 
 /// A trait for all 16-bit address types
 pub trait Address: Copy + Ord + Eq + fmt::UpperHex {
-    /// The zero address
-    /// TODO: Use std::num::Zero instead when it becomes stable
-    fn zero () -> Self;
+    /// Calculate new address with given offset (wrapping)
+    fn offset (&self, offset: i16) -> Self;
 
     /// The address as an unsigned integer
     fn to_u16 (&self) -> u16;
-
-    /// Calculate new address with given offset (wrapping)
-    fn offset (&self, offset: i16) -> Self;
 
     /// Return an object for displaying the address
     fn display (&self) -> Display<Self> {
@@ -23,8 +19,6 @@ pub trait Address: Copy + Ord + Eq + fmt::UpperHex {
 }
 
 impl Address for u16 {
-    fn zero () -> u16 { 0 }
-
     fn to_u16 (&self) -> u16 { *self }
 
     fn offset (&self, offset: i16) -> u16 {
@@ -56,11 +50,6 @@ impl<'a, A: Address> fmt::Display for Display<'a, A> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn zero () {
-        assert_eq!(u16::zero(), 0x0000);
-    }
 
     #[test]
     fn offset () {

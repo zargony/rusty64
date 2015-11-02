@@ -65,28 +65,25 @@ pub trait Addressable {
     }
 
     /// Return an object for displaying a hexdump of the given address range
-    fn hexdump<A: Address> (&self, addr1: A, addr2: A) -> HexDump<A, Self> {
-        HexDump { mem: self, addr1: addr1, addr2: addr2 }
+    fn hexdump<A: Address, I: Iterator<Item=A> + Clone> (&self, iter: I) -> HexDump<I, Self> {
+        HexDump { mem: self, iter: iter }
     }
 }
 
 /// Helper struct for displaying a hexdump of an address range
-pub struct HexDump<'a, A, M: 'a + ?Sized> {
+pub struct HexDump<'a, I, M: 'a + ?Sized> {
     mem: &'a M,
-    addr1: A,
-    addr2: A,
+    iter: I,
 }
 
-impl<'a, A: Address, M: Addressable> fmt::Display for HexDump<'a, A, M> {
+impl<'a, A: Address, I: Iterator<Item=A> + Clone, M: Addressable> fmt::Display for HexDump<'a, I, M> {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut str = String::new();
-        let mut addr = self.addr1;
-        // FIXME: Take advantage of RangeInclusive syntax in Rust 1.5: (0...self.addr2)
-        while addr < self.addr2 {
-            try!(write!(str, "{:02X} ", self.mem.get(addr)));
-            addr = addr.offset(1);
+        let mut iter = self.iter.clone().peekable();
+        while let Some(addr) = iter.next() {
+            try!(write!(str, "{:02X}", self.mem.get(addr)));
+            if iter.peek().is_some() { try!(write!(str, " ")); }
         }
-        try!(write!(str, "{:02X}", self.mem.get(addr)));
         str.fmt(f)
     }
 }
@@ -238,10 +235,10 @@ mod tests {
     #[test]
     fn dumping_memory () {
         let data = TestMemory;
-        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0100)), "01");
-        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0101)), "01 02");
-        assert_eq!(format!("{}", data.hexdump(0x0100, 0x0103)), "01 02 03 04");
-        assert_eq!(format!("{:16}", data.hexdump(0x0100, 0x0103)), "01 02 03 04     ");
-        assert_eq!(format!("{:>16}", data.hexdump(0x0100, 0x0103)), "     01 02 03 04");
+        assert_eq!(format!("{}", data.hexdump(0x0100..0x0101)), "01");
+        assert_eq!(format!("{}", data.hexdump(0x0100..0x0102)), "01 02");
+        assert_eq!(format!("{}", data.hexdump(0x0100..0x0104)), "01 02 03 04");
+        assert_eq!(format!("{:16}", data.hexdump(0x0100..0x0104)), "01 02 03 04     ");
+        assert_eq!(format!("{:>16}", data.hexdump(0x0100..0x0104)), "     01 02 03 04");
     }
 }
