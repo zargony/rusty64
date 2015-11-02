@@ -554,6 +554,7 @@ mod tests {
         // Test all instructions using Ruud Baltissen's test ROM from his VHDL 6502 core.
         // See also http://visual6502.org/wiki/index.php?title=6502TestPrograms
         let mut cpu = Mos6502::new(Ram::with_capacity(0xffff));
+        for addr in 0x0000..0xe000 { cpu.mem.set(addr, 0x00); }
         let rom = Rom::new("test/ttl6502_v10.rom");
         cpu.mem.copy(0xe000, &rom, 0x0000, rom.capacity());
         cpu.reset();
