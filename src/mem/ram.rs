@@ -22,7 +22,8 @@ impl Ram {
     /// Create new RAM which will be addressable from 0 to the given address. The whole address
     /// space is filled with random bytes initially.
     pub fn with_capacity (last_addr: u16) -> Ram {
-        let data = 0.successive().upto(last_addr).map(|_| rand::random()).collect();
+        // FIXME: Take advantage of RangeInclusive syntax in Rust 1.5: (0...last_addr)
+        let data = (0..(last_addr as usize + 1)).map(|_| rand::random()).collect();
         Ram { data: data, last_addr: last_addr }
     }
 
@@ -68,7 +69,7 @@ mod tests {
 
     #[test]
     fn read_write () {
-        let mut memory = Ram::with_capacity(0x03ff_u16);
+        let mut memory = Ram::with_capacity(0x03ff);
         memory.set(0x0123, 0x55);
         assert_eq!(memory.get(0x0123), 0x55);
     }

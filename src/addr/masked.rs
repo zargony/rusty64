@@ -175,13 +175,4 @@ mod tests {
         assert_eq!(Masked(0x1300, 0xff00).offset(-1), 0x13ff);
         assert_eq!(Masked(0x1300, 0xfff0).offset(-1), 0x130f);
     }
-
-    #[test]
-    fn address_iterating () {
-        let mut it = Masked(0x12fe, 0xff00).successive();
-        assert_eq!(it.next().unwrap(), 0x12fe);
-        assert_eq!(it.next().unwrap(), 0x12ff);
-        assert_eq!(it.next().unwrap(), 0x1200);
-        assert_eq!(it.next().unwrap(), 0x1201);
-    }
 }

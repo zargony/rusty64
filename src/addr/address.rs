@@ -16,11 +16,6 @@ pub trait Address: Copy + Ord + Eq + fmt::UpperHex {
     /// Calculate new address with given offset (wrapping)
     fn offset (&self, offset: i16) -> Self;
 
-    /// Return an iterator for getting successive addresses (wrapping)
-    fn successive (&self) -> Iter<Self> {
-        Iter { addr: *self }
-    }
-
     /// Return an object for displaying the address
     fn display (&self) -> Display<Self> {
         Display { addr: self }
@@ -37,50 +32,6 @@ impl Address for u16 {
             self.wrapping_sub(-offset as u16)
         } else {
             self.wrapping_add(offset as u16)
-        }
-    }
-}
-
-/// Iterator for getting successive addresses
-pub struct Iter<A> {
-    addr: A,
-}
-
-impl<A: Address> Iter<A> {
-    /// Bound iterator to only run until the given last address
-    pub fn upto (self, last_addr: A) -> UpTo<A> {
-        UpTo { it: self, last_addr: last_addr, flag: false }
-    }
-}
-
-impl<A: Address> Iterator for Iter<A> {
-    type Item = A;
-
-    fn next (&mut self) -> Option<A> {
-        let addr = self.addr;
-        self.addr = self.addr.offset(1);
-        Some(addr)
-    }
-}
-
-/// Iterator for getting successive addresses until a given last address
-pub struct UpTo<A> {
-    it: Iter<A>,
-    last_addr: A,
-    flag: bool,
-}
-
-impl<A: Address> Iterator for UpTo<A> {
-    type Item = A;
-
-    fn next (&mut self) -> Option<A> {
-        if self.flag {
-            None
-        } else {
-            self.it.next().and_then(|x| {
-                if x == self.last_addr { self.flag = true; }
-                Some(x)
-            })
         }
     }
 }
@@ -121,24 +72,6 @@ mod tests {
     fn offset_wrapping () {
         assert_eq!(0xffff.offset( 1), 0x0000);
         assert_eq!(0x0000.offset(-1), 0xffff);
-    }
-
-    #[test]
-    fn iterating () {
-        let mut it = 0xfffe.successive();
-        assert_eq!(it.next(), Some(0xfffe));
-        assert_eq!(it.next(), Some(0xffff));
-        assert_eq!(it.next(), Some(0x0000));
-        assert_eq!(it.next(), Some(0x0001));
-    }
-
-    #[test]
-    fn bounded_iterating () {
-        let mut it = 0xfffe.successive().upto(0xffff);
-        assert_eq!(it.next(), Some(0xfffe));
-        assert_eq!(it.next(), Some(0xffff));
-        assert_eq!(it.next(), None);
-        assert_eq!(it.next(), None);
     }
 
     #[test]

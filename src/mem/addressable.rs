@@ -18,8 +18,8 @@ pub trait Addressable {
     unsafe fn get_type<A: Address, T: Copy> (&self, addr: A) -> T {
         let mut val: T = mem::uninitialized();
         let ptr = &mut val as *mut T as *mut u8;
-        for (i, addr) in addr.successive().take(mem::size_of::<T>()).enumerate() {
-            *ptr.offset(i as isize) = self.get(addr);
+        for i in 0..mem::size_of::<T>() {
+            *ptr.offset(i as isize) = self.get(addr.offset(i as i16));
         }
         val
     }
@@ -42,8 +42,8 @@ pub trait Addressable {
     /// is marked unsafe. For integers, better use `set_be` or `set_le` instead.
     unsafe fn set_type<A: Address, T: Copy> (&mut self, addr: A, val: T) {
         let ptr = &val as *const T as *const u8;
-        for (i, addr) in addr.successive().take(mem::size_of::<T>()).enumerate() {
-            self.set(addr, *ptr.offset(i as isize));
+        for i in 0..mem::size_of::<T>() {
+            self.set(addr.offset(i as i16), *ptr.offset(i as isize));
         }
     }
 
@@ -59,8 +59,8 @@ pub trait Addressable {
 
     /// Copy data from another addressable source
     fn copy<A1: Address, A2: Address, M: Addressable> (&mut self, self_addr: A1, other: &M, other_addr: A2, size: usize) {
-        for (dst_addr, src_addr) in self_addr.successive().zip(other_addr.successive()).take(size) {
-            self.set(dst_addr, other.get(src_addr));
+        for i in 0..size {
+            self.set(self_addr.offset(i as i16), other.get(other_addr.offset(i as i16)));
         }
     }
 
@@ -80,10 +80,13 @@ pub struct HexDump<'a, A, M: 'a + ?Sized> {
 impl<'a, A: Address, M: Addressable> fmt::Display for HexDump<'a, A, M> {
     fn fmt (&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut str = String::new();
-        for addr in self.addr1.successive().upto(self.addr2) {
-            try!(write!(str, "{:02X}", self.mem.get(addr)));
-            if addr != self.addr2 { try!(write!(str, " ")); }
+        let mut addr = self.addr1;
+        // FIXME: Take advantage of RangeInclusive syntax in Rust 1.5: (0...self.addr2)
+        while addr < self.addr2 {
+            try!(write!(str, "{:02X} ", self.mem.get(addr)));
+            addr = addr.offset(1);
         }
+        try!(write!(str, "{:02X}", self.mem.get(addr)));
         str.fmt(f)
     }
 }
