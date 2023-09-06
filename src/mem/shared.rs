@@ -1,31 +1,39 @@
-//!
 //! Generic implementations for shared (wrapped) addressable objects
-//!
 
+use super::Addressable;
+use crate::addr::Address;
 use std::cell::RefCell;
 use std::rc::Rc;
-use addr::Address;
-use mem::Addressable;
 
 impl<M: Addressable> Addressable for RefCell<M> {
-    fn get<A: Address> (&self, addr: A) -> u8 { self.borrow().get(addr) }
-    fn set<A: Address> (&mut self, addr: A, data: u8) { self.borrow_mut().set(addr, data) }
+    fn get<A: Address>(&self, addr: A) -> u8 {
+        self.borrow().get(addr)
+    }
+
+    fn set<A: Address>(&mut self, addr: A, data: u8) {
+        self.borrow_mut().set(addr, data)
+    }
 }
 
 impl<M: Addressable> Addressable for Rc<RefCell<M>> {
-    fn get<A: Address> (&self, addr: A) -> u8 { (**self).borrow().get(addr) }
-    fn set<A: Address> (&mut self, addr: A, data: u8) { (**self).borrow_mut().set(addr, data) }
-}
+    fn get<A: Address>(&self, addr: A) -> u8 {
+        (**self).borrow().get(addr)
+    }
 
+    fn set<A: Address>(&mut self, addr: A, data: u8) {
+        (**self).borrow_mut().set(addr, data)
+    }
+}
 
 #[cfg(test)]
 mod tests {
+    use super::super::Ram;
+    use super::*;
     use std::cell::RefCell;
     use std::rc::Rc;
-    use mem::{Addressable, Ram};
 
     #[test]
-    fn read_write () {
+    fn read_write() {
         let mut mem = Rc::new(RefCell::new(Ram::new()));
         mem.set(0x12, 0x34);
         assert_eq!(mem.get(0x12), 0x34);
@@ -34,7 +42,7 @@ mod tests {
     }
 
     #[test]
-    fn read_write_shared () {
+    fn read_write_shared() {
         let mut mem1 = Rc::new(RefCell::new(Ram::new()));
         mem1.set(0x12, 0x34);
         let mut mem2 = mem1.clone();

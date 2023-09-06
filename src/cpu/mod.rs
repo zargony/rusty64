@@ -1,6 +1,4 @@
-//!
 //! CPU handling
-//!
 
 pub use self::cpu::CPU;
 pub use self::mos6502::Mos6502;
