@@ -66,10 +66,7 @@ pub trait Addressable {
 
     /// Return an object for displaying a hexdump of the given address range
     fn hexdump<A: Address, I: Iterator<Item = A> + Clone>(&self, iter: I) -> HexDump<I, Self> {
-        HexDump {
-            mem: self,
-            iter: iter,
-        }
+        HexDump { mem: self, iter }
     }
 }
 

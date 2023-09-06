@@ -2,7 +2,6 @@
 
 use super::Addressable;
 use crate::addr::Address;
-use rand;
 
 /// Generic read/write memory (RAM)
 pub struct Ram {
@@ -21,10 +20,7 @@ impl Ram {
     /// space is filled with random bytes initially.
     pub fn with_capacity(last_addr: u16) -> Ram {
         let data = (0..=last_addr).map(|_| rand::random()).collect();
-        Ram {
-            data: data,
-            last_addr: last_addr,
-        }
+        Ram { data, last_addr }
     }
 
     /// Returns the capacity of the RAM

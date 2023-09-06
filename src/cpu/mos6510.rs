@@ -1,6 +1,6 @@
 //! MOS 6510
 
-use super::{Mos6502, CPU};
+use super::{Cpu, Mos6502};
 use crate::mem::Addressable;
 
 /// The MOS65010 processor
@@ -32,7 +32,7 @@ impl<M: Addressable> Mos6510<M> {
     }
 }
 
-impl<M: Addressable> CPU for Mos6510<M> {
+impl<M: Addressable> Cpu for Mos6510<M> {
     /// Reset the CPU
     fn reset(&mut self) {
         self.cpu.reset();

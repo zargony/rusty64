@@ -31,7 +31,7 @@ impl Rom {
             Ok(len) => len,
         };
         Rom {
-            data: data,
+            data,
             last_addr: (len - 1) as u16,
         }
     }

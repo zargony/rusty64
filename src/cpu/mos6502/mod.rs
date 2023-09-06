@@ -15,7 +15,7 @@
 mod instruction;
 mod operand;
 
-use super::CPU;
+use super::Cpu;
 use crate::addr::{Address, Integer, Masked};
 use crate::mem::Addressable;
 use bitflags::bitflags;
@@ -72,7 +72,7 @@ impl<M: Addressable> Mos6502<M> {
             y: 0x00,
             sr: StatusFlags::UNUSED_ALWAYS_ON_FLAG,
             sp: 0x00,
-            mem: mem,
+            mem,
             reset: true,
             nmi: false,
             irq: false,
@@ -285,7 +285,7 @@ impl<M: Addressable> Mos6502<M> {
     }
 }
 
-impl<M: Addressable> CPU for Mos6502<M> {
+impl<M: Addressable> Cpu for Mos6502<M> {
     /// Reset the CPU
     fn reset(&mut self) {
         // Trigger the RESET line. The actual RESET processing is done in the next step().

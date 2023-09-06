@@ -95,9 +95,9 @@ impl Operand {
 impl fmt::Display for Operand {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let str = match *self {
-            Operand::Implied => format!(""),
+            Operand::Implied => "".to_string(),
             Operand::Immediate(value) => format!("#${:02X}", value),
-            Operand::Accumulator => format!("A"),
+            Operand::Accumulator => "A".to_string(),
             Operand::Relative(offset) => format!("{:+}", offset),
             Operand::Absolute(addr) => format!("{}", addr.display()),
             Operand::AbsoluteIndexedWithX(addr) => format!("{},X", addr.display()),

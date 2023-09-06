@@ -8,6 +8,7 @@ use std::fmt;
 
 /// Processor instructions
 #[derive(Debug, PartialEq, Eq)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum Instruction {
     // Load/store operations
     LDA,

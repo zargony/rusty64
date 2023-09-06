@@ -1,7 +1,7 @@
 //! Generic CPU handling
 
 /// A generic trait for CPUs
-pub trait CPU {
+pub trait Cpu {
     /// Reset the CPU
     fn reset(&mut self);
 
