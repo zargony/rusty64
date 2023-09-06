@@ -1,0 +1,30 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+  test:
+    name: Test
+    needs: [check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Build everything
+        run: cargo build --workspace --all-targets --all-features
+      - name: Run all unit tests
+        run: cargo test --workspace --all-targets --all-features
